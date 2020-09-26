@@ -114,7 +114,7 @@ int StSocket::Write(void *buf, size_t size, ssize_t *nwrite)
     return ERROR_SUCCESS;
 }
 
-int StSocket::Writev(const struct iovec *iov, int iov_size, ssize_t *nwrite)
+int StSocket::Writev(const struct iovec *iov, size_t iov_size, ssize_t *nwrite)
 {
     ssize_t nb_write = st_writev(stfd_, iov, iov_size, send_timeout_);
 
