@@ -2,8 +2,8 @@
 #define RS_SOCKET_HPP
 
 #include <common/core.hpp>
-#include <st.h>
 #include <common/io/io.hpp>
+#include <st.h>
 
 class StSocket:public IProtocolReaderWriter
 {
@@ -25,6 +25,13 @@ public:
     virtual int ReadFully(void *buf, size_t size, ssize_t *nread) override;
     virtual int Write(void *buf, size_t size, ssize_t *nread) override;
     virtual int Writev(const struct iovec *iov, size_t iov_size, ssize_t *nwrite) override;
+
+private:
+    st_netfd_t stfd_;
+    int64_t send_timeout_;
+    int64_t recv_timeout_;
+    int64_t send_bytes_;
+    int64_t recv_bytes_;
 };
 
 #endif
