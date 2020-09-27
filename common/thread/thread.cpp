@@ -98,14 +98,14 @@ void Thread::Dispatch()
             rs_warn("thread %s OnBeforeCycle failed, ignored and retry,ret=%d", name_, ret);
             goto failed;
         }
-        rs_info("thread %s OnBeforeCycle success", name_);
+        rs_verbose("thread %s OnBeforeCycle success", name_);
         if ((ret = handler_->Cycle()) != ERROR_SUCCESS)
         {
             rs_warn("thread %s Cycle failed,ignore and retry, ret=%d", name_, ret);
             goto failed;
         }
 
-        rs_info("thread %s Cycle success", name_);
+        rs_verbose("thread %s Cycle success", name_);
 
         if ((ret = handler_->OnEndCycle()) != ERROR_SUCCESS)
         {
@@ -113,7 +113,7 @@ void Thread::Dispatch()
             goto failed;
         }
 
-        rs_info("thread %s OnEnCycle success", name_);
+        rs_verbose("thread %s OnEnCycle success", name_);
 
 
     failed:
