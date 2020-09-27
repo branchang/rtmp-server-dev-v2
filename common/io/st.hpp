@@ -3,7 +3,7 @@
 
 #include <common/core.hpp>
 #include <st.h>
-extern int StInit();
-extern void StCloseFd(st_netfd_t &stfd);
+extern int STInit();
+extern void STCloseFd(st_netfd_t &stfd);
 
 #endif

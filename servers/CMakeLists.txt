@@ -2,6 +2,7 @@
 add_executable(rtmp_server_dev EXCLUDE_FROM_ALL
     main.cpp
     # server.cpp
+    rtmp_server.cpp
 )
 
 add_dependencies(rtmp_server_dev

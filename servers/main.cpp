@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     rs_trace("trace info:%s", "12341321");
     rs_info("info info:%s", "12341321");
 
-    StInit();
+    STInit();
     internal::IThreadHandler handler;
     internal::Thread thread("test_thread", &handler, 0, false);
     thread.Start();
