@@ -25,10 +25,14 @@ public:
     virtual ~Thread();
 
 public:
-    int Start();
-    void Stop();
-    void *Function(void *arg);
-    void Dispatch();
+    virtual int Start();
+    virtual void Stop();
+    virtual bool CanLoop();
+    virtual void StopLoop();
+
+    static void *Function(void *arg);
+    virtual void Dispatch();
+    virtual void Dispose();
 
 private:
     const char *name_;
@@ -38,7 +42,7 @@ private:
     st_thread_t st_;
     bool loop_;
     bool really_terminated_;
-    bool dispose_;
+    bool disposed_;
     bool can_run_;
     int cid_;
 

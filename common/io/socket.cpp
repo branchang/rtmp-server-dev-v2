@@ -47,10 +47,8 @@ int64_t StSocket::GetRecvBytes()
 int StSocket::Read(void *buf, size_t size, ssize_t *nread)
 {
     ssize_t nb_read = st_read(stfd_, buf, size, recv_timeout_);
-    if(nread)
-    {
-        *nread = nb_read;
-    }
+    *nread = nb_read;
+
     if(nb_read <=0 )
     {
         if (nb_read < 0 && errno == ETIME)
@@ -71,10 +69,8 @@ int StSocket::Read(void *buf, size_t size, ssize_t *nread)
 int StSocket::ReadFully(void *buf, size_t size, ssize_t *nread)
 {
     ssize_t nb_read = st_read_fully(stfd_, buf, size, recv_timeout_);
-    if (nread)
-    {
-        *nread = nb_read;
-    }
+    *nread = nb_read;
+
     if(nb_read != size)
     {
         if(nb_read < 0 && errno == ETIME)
@@ -96,10 +92,7 @@ int StSocket::ReadFully(void *buf, size_t size, ssize_t *nread)
 int StSocket::Write(void *buf, size_t size, ssize_t *nwrite)
 {
     ssize_t nb_write = st_write(stfd_, buf, size, send_timeout_);
-    if(nwrite)
-    {
-        *nwrite = nb_write;
-    }
+    *nwrite = nb_write;
 
     if (nb_write <= 0)
     {
@@ -118,10 +111,8 @@ int StSocket::Writev(const struct iovec *iov, size_t iov_size, ssize_t *nwrite)
 {
     ssize_t nb_write = st_writev(stfd_, iov, iov_size, send_timeout_);
 
-    if (nwrite)
-    {
-        *nwrite = nb_write;
-    }
+    *nwrite = nb_write;
+
     if (nb_write <= 0)
     {
         if (nb_write < 0 && errno == ETIME)
