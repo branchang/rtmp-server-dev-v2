@@ -2,16 +2,14 @@
 #define RS_LISTENER_HPP
 
 #include <common/core.hpp>
-#include <common/thread/thread.hpp>
-#include <servers/rtmp_server.hpp>
-
+#include <common/thread.hpp>
 
 #include <string>
 
-enum class ListenerType
-{
-    RTMPStreamListener_TYPE = 0,
-};
+// enum class ListenerType
+// {
+//     RTMPStreamListener_TYPE = 0,
+// };
 
 class ITCPClientHandler
 {

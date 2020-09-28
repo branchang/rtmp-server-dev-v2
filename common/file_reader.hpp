@@ -1,7 +1,7 @@
 #ifndef RS_FILE_READER_H
 #define RS_FILE_READER_H
 #include <common/core.hpp>
-#include <common/io/reader.hpp>
+#include <common/reader.hpp>
 
 class FileReader: public Reader
 {

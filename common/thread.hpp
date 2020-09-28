@@ -2,6 +2,7 @@
 #define RS_THREAD_HPP
 #include <common/core.hpp>
 #include <st.h>
+#include <string>
 
 namespace internal
 {
@@ -21,7 +22,7 @@ public:
 
 class Thread{
 public:
-    Thread(const char* name, IThreadHandler *thread_handler, int64_t interval_us, bool joinable);
+    Thread(const std::string &name, IThreadHandler *thread_handler, int64_t interval_us, bool joinable);
     virtual ~Thread();
 
 public:
@@ -35,7 +36,7 @@ public:
     virtual void Dispose();
 
 private:
-    const char *name_;
+    std::string name_;
     IThreadHandler *handler_;
     int64_t interval_us_;
     bool joinable_;

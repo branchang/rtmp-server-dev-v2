@@ -1,8 +1,8 @@
 #ifndef RS_FAST_LOG_HPP
 #define RS_FAST_LOG_HPP
 #include <common/core.hpp>
-#include <common/log/log.hpp>
-#include <common/config/reload.hpp>
+#include <common/log.hpp>
+#include <common/reload.hpp>
 #include <map>
 #include <st.h>
 

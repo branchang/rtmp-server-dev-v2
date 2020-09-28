@@ -1,4 +1,4 @@
-#include <common/config/config.hpp>
+#include <common/config.hpp>
 #include <common/error.hpp>
 
 

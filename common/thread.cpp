@@ -1,5 +1,5 @@
-#include <common/thread/thread.hpp>
-#include <common/log/log.hpp>
+#include <common/thread.hpp>
+#include <common/log.hpp>
 #include <common/error.hpp>
 
 
@@ -40,7 +40,7 @@ void IThreadHandler::OnThreadStop()
 
 }
 
-Thread::Thread(const char *name,
+Thread::Thread(const std::string &name,
                 IThreadHandler *handler,
                 int64_t interval_us,
                 bool joinable): name_(name),
@@ -54,10 +54,10 @@ Thread::Thread(const char *name,
                                 can_run_(false),
                                 cid_(-1)
 {
-    if(!name_)
-    {
-        name_ = "";
-    }
+    // if(!name_)
+    // {
+    //     name_ = "";
+    // }
 }
 
 Thread::~Thread()
@@ -79,7 +79,7 @@ void Thread::Dispatch()
     int ret = ERROR_SUCCESS;
     _context->GenerateID();
 
-    rs_info("thread %s start", name_);
+    rs_info("thread %s start", name_.c_str());
 
     cid_ = _context->GetID();
 
@@ -95,25 +95,25 @@ void Thread::Dispatch()
     {
         if ((ret = handler_->OnbeforeCycle()) != ERROR_SUCCESS)
         {
-            rs_warn("thread %s OnBeforeCycle failed, ignored and retry,ret=%d", name_, ret);
+            rs_warn("thread %s OnBeforeCycle failed, ignored and retry,ret=%d", name_.c_str(), ret);
             goto failed;
         }
-        rs_verbose("thread %s OnBeforeCycle success", name_);
+        rs_verbose("thread %s OnBeforeCycle success", name_.c_str());
         if ((ret = handler_->Cycle()) != ERROR_SUCCESS)
         {
-            rs_warn("thread %s Cycle failed,ignore and retry, ret=%d", name_, ret);
+            rs_warn("thread %s Cycle failed,ignore and retry, ret=%d", name_.c_str(), ret);
             goto failed;
         }
 
-        rs_verbose("thread %s Cycle success", name_);
+        rs_verbose("thread %s Cycle success", name_.c_str());
 
         if ((ret = handler_->OnEndCycle()) != ERROR_SUCCESS)
         {
-            rs_warn("thread %s OnEndCycle failed, ignore and retry,ret=%s", name_, ret);
+            rs_warn("thread %s OnEndCycle failed, ignore and retry,ret=%s", name_.c_str(), ret);
             goto failed;
         }
 
-        rs_verbose("thread %s OnEnCycle success", name_);
+        rs_verbose("thread %s OnEnCycle success", name_.c_str());
 
 
     failed:
@@ -130,7 +130,7 @@ void Thread::Dispatch()
 
     really_terminated_ = true;
     handler_->OnThreadStop();
-    rs_info("thread %s quit", name_);
+    rs_info("thread %s quit", name_.c_str());
     _context->ClearID();
 }
 
@@ -139,13 +139,13 @@ int Thread::Start()
     int ret = ERROR_SUCCESS;
     if (st_)
     {
-        rs_warn("thread %s already running", name_);
+        rs_warn("thread %s already running", name_.c_str());
     }
 
     if ((st_ = st_thread_create(Thread::Function, this, (joinable_?1:0),0)) == nullptr)
     {
             ret = ERROR_ST_CREATE_CYCLE_THREAD;
-            rs_error("thread %s, st_thread_create failed,ret=%s", name_, ret);
+            rs_error("thread %s, st_thread_create failed,ret=%s", name_.c_str(), ret);
             return ret;
     }
     disposed_ = false;
