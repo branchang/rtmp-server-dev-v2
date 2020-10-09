@@ -13,10 +13,10 @@ public:
     virtual ~IThreadHandler();
 
 public:
-    virtual int OnbeforeCycle();
+    virtual int32_t OnbeforeCycle();
     virtual void OnThreadStart();
-    virtual int Cycle();
-    virtual int OnEndCycle();
+    virtual int32_t Cycle();
+    virtual int32_t OnEndCycle();
     virtual void OnThreadStop();
 };
 
@@ -26,10 +26,11 @@ public:
     virtual ~Thread();
 
 public:
-    virtual int Start();
+    virtual int32_t Start();
     virtual void Stop();
     virtual bool CanLoop();
     virtual void StopLoop();
+    virtual int32_t GetID();
 
     static void *Function(void *arg);
     virtual void Dispatch();
@@ -45,7 +46,7 @@ private:
     bool really_terminated_;
     bool disposed_;
     bool can_run_;
-    int cid_;
+    int32_t cid_;
 
 };
 

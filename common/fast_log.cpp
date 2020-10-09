@@ -27,11 +27,11 @@ FastLog::~FastLog()
 
 }
 
-void FastLog::Verbose(const char *tag, int context_id, const char *fmt, ...)
+void FastLog::Verbose(const char *tag, int32_t context_id, const char *fmt, ...)
 {
     if(level_ > LogLevel::VERBOSE)
         return;
-    int size = 0;
+    int32_t size = 0;
     if (!GenerateHeader(false, tag, context_id, "VERBOSE", &size))
         return;
     va_list ap;
@@ -41,11 +41,11 @@ void FastLog::Verbose(const char *tag, int context_id, const char *fmt, ...)
     WriteLog(fd_, log_data_, size, LogLevel::VERBOSE);
 }
 
-void FastLog::Info(const char *tag, int context_id, const char *fmt, ...)
+void FastLog::Info(const char *tag, int32_t context_id, const char *fmt, ...)
 {
     if(level_ > LogLevel::INFO)
         return;
-    int size = 0;
+    int32_t size = 0;
     if (!GenerateHeader(false, tag, context_id, "INFO", &size))
         return;
     va_list ap;
@@ -56,11 +56,11 @@ void FastLog::Info(const char *tag, int context_id, const char *fmt, ...)
 
 }
 
-void FastLog::Trace(const char *tag, int context_id, const char *fmt, ...)
+void FastLog::Trace(const char *tag, int32_t context_id, const char *fmt, ...)
 {
     if(level_ > LogLevel::TRACE)
         return;
-    int size = 0;
+    int32_t size = 0;
     if (!GenerateHeader(false, tag, context_id, "TRACE", &size))
         return;
     va_list ap;
@@ -71,11 +71,11 @@ void FastLog::Trace(const char *tag, int context_id, const char *fmt, ...)
 
 }
 
-void FastLog::Warn(const char *tag, int context_id, const char *fmt, ...)
+void FastLog::Warn(const char *tag, int32_t context_id, const char *fmt, ...)
 {
     if(level_ > LogLevel::WARN)
         return;
-    int size = 0;
+    int32_t size = 0;
     if (!GenerateHeader(false, tag, context_id, "WARN", &size))
         return;
     va_list ap;
@@ -86,11 +86,11 @@ void FastLog::Warn(const char *tag, int context_id, const char *fmt, ...)
 
 }
 
-void FastLog::Error(const char *tag, int context_id, const char *fmt, ...)
+void FastLog::Error(const char *tag, int32_t context_id, const char *fmt, ...)
 {
     if(level_ > LogLevel::ERROR)
         return;
-    int size = 0;
+    int32_t size = 0;
     if (!GenerateHeader(false, tag, context_id, "ERROR", &size))
         return;
     va_list ap;
@@ -105,27 +105,27 @@ void FastLog::Error(const char *tag, int context_id, const char *fmt, ...)
 }
 
 
-int FastLog::OnReloadUTCTime()
+int32_t FastLog::OnReloadUTCTime()
 {
-
+    return 0;
 }
 
-int FastLog::OnReloadLogTank()
+int32_t FastLog::OnReloadLogTank()
 {
-
+    return 0;
 }
 
-int FastLog::OnReloadLogLevel()
+int32_t FastLog::OnReloadLogLevel()
 {
-
+    return 0;
 }
 
-int FastLog::OnReloadLogFile()
+int32_t FastLog::OnReloadLogFile()
 {
-
+    return 0;
 }
 
-bool FastLog::GenerateHeader(bool error, const char *tag, int context_id, const char *level_name, int *header_size)
+bool FastLog::GenerateHeader(bool error, const char *tag, int32_t context_id, const char *level_name, int32_t *header_size)
 {
     timeval tv;
     if (gettimeofday(&tv, nullptr) == -1)
@@ -142,21 +142,21 @@ bool FastLog::GenerateHeader(bool error, const char *tag, int context_id, const 
             return false;
     }
 
-    int log_header_size = -1;
+    int32_t log_header_size = -1;
     if (error)
     {
         if (tag)
         {
             log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
                                         "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%s][%d][%d][%d]",
-                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int)(tv.tv_usec/1000),
+                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec/1000),
                                         level_name, tag, getpid(), context_id, errno);
         }
         else
         {
             log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
                                         "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%d][%d][%d]",
-                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int)(tv.tv_usec/1000),
+                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec/1000),
                                         level_name, getpid(), context_id, errno);
 
         }
@@ -167,14 +167,14 @@ bool FastLog::GenerateHeader(bool error, const char *tag, int context_id, const 
         {
             log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
                                         "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%s][%d][%d]",
-                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int)(tv.tv_usec/1000),
+                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec/1000),
                                         level_name, tag, getpid(), context_id);
         }
         else
         {
             log_header_size = snprintf(log_data_, LOG_MAX_SIZE,
                                         "[%d-%02d-%02d %02d:%02d:%02d.%03d][%s][%d][%d]",
-                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int)(tv.tv_usec/1000),
+                                        1900+tm->tm_year, 1 + tm->tm_mon, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec, (int32_t)(tv.tv_usec/1000),
                                         level_name, getpid(), context_id);
         }
     }
@@ -186,7 +186,7 @@ bool FastLog::GenerateHeader(bool error, const char *tag, int context_id, const 
 
 }
 
-void FastLog::WriteLog(int &fd_, char *str_log, int size, int level)
+void FastLog::WriteLog(int32_t &fd_, char *str_log, int32_t size, int32_t level)
 {
     size =  rs_min(LOG_MAX_SIZE - 1, size);
 
@@ -230,15 +230,15 @@ ThreadContext::~ThreadContext()
 
 }
 
-int ThreadContext::GenerateID()
+int32_t ThreadContext::GenerateID()
 {
-    static int id = 100;
-    int cid = id++;
+    static int32_t id = 100;
+    int32_t cid = id++;
     cache_[st_thread_self()] = cid;
     return cid;
 }
 
-int ThreadContext::GetID()
+int32_t ThreadContext::GetID()
 {
     st_thread_t st = st_thread_self();
     if (st == nullptr)
@@ -246,11 +246,11 @@ int ThreadContext::GetID()
     return cache_[st];
 }
 
-int ThreadContext::SetID(int v)
+int32_t ThreadContext::SetID(int v)
 {
     st_thread_t self = st_thread_self();
 
-    int old_v = 0;
+    int32_t old_v = 0;
     if (cache_.find(self) != cache_.end())
         old_v = cache_[self];
 
@@ -259,7 +259,7 @@ int ThreadContext::SetID(int v)
 
 void  ThreadContext::ClearID()
 {
-    std::map<st_thread_t, int>::iterator it = cache_.find(st_thread_self());
+    std::map<st_thread_t, int32_t>::iterator it = cache_.find(st_thread_self());
     if (it != cache_.end())
         cache_.erase(it);
 }

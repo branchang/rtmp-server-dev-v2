@@ -12,7 +12,7 @@ public:
 public:
     virtual void Subscribe(IReloadHandler *handler);
     virtual void UnSubScribe(IReloadHandler *handler);
-    virtual int Reload();
+    virtual int32_t Reload();
 
 };
 

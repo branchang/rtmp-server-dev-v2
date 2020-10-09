@@ -37,7 +37,7 @@ public:
     virtual ~IBufferReader();
 
 public:
-    virtual int Read(void *buf, size_t size, ssize_t *nread) = 0;
+    virtual int32_t Read(void *buf, size_t size, ssize_t *nread) = 0;
 };
 
 class IBufferWriter
@@ -47,9 +47,9 @@ public:
     virtual ~IBufferWriter();
 
 public:
-    virtual int Write(void *buf, size_t size, ssize_t *nwrite) = 0;
+    virtual int32_t Write(void *buf, size_t size, ssize_t *nwrite) = 0;
     // TODO
-    virtual int Writev(const struct iovec *buf, size_t size, ssize_t *nwrite) = 0;
+    virtual int32_t Writev(const struct iovec *buf, size_t size, ssize_t *nwrite) = 0;
 };
 
 class IStatistic
@@ -74,7 +74,7 @@ public:
     virtual void SetRecvTimeout(int64_t timeout_us) = 0;
     virtual int64_t GetRecvTimeout() = 0;
 public:
-    virtual int ReadFully(void *buf, size_t size, ssize_t *nread) = 0;
+    virtual int32_t ReadFully(void *buf, size_t size, ssize_t *nread) = 0;
 
 };
 

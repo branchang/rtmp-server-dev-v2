@@ -5,7 +5,7 @@
 #include <common/io.hpp>
 #include <st.h>
 
-class StSocket:public IProtocolReaderWriter
+class StSocket : public IProtocolReaderWriter
 {
 public:
     StSocket(st_netfd_t client_stfd);
@@ -21,10 +21,10 @@ public:
     virtual int64_t GetRecvBytes() override;
 
 public:
-    virtual int Read(void *buf, size_t size, ssize_t *nread) override;
-    virtual int ReadFully(void *buf, size_t size, ssize_t *nread) override;
-    virtual int Write(void *buf, size_t size, ssize_t *nread) override;
-    virtual int Writev(const struct iovec *iov, size_t iov_size, ssize_t *nwrite) override;
+    virtual int32_t Read(void *buf, size_t size, ssize_t *nread) override;
+    virtual int32_t ReadFully(void *buf, size_t size, ssize_t *nread) override;
+    virtual int32_t Write(void *buf, size_t size, ssize_t *nread) override;
+    virtual int32_t Writev(const struct iovec *iov, size_t iov_size, ssize_t *nwrite) override;
 
 private:
     st_netfd_t stfd_;

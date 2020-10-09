@@ -10,27 +10,27 @@ ILog::~ILog()
 
 }
 
-void ILog::Verbose(const char*, int, const char *, ...)
+void ILog::Verbose(const char*, int32_t, const char *, ...)
 {
 
 }
 
-void ILog::Info(const char*, int, const char *, ...)
+void ILog::Info(const char*, int32_t, const char *, ...)
 {
 
 }
 
-void ILog::Trace(const char*, int, const char *, ...)
+void ILog::Trace(const char*, int32_t, const char *, ...)
 {
 
 }
 
-void ILog::Warn(const char*, int, const char *, ...)
+void ILog::Warn(const char*, int32_t, const char *, ...)
 {
 
 }
 
-void ILog::Error(const char*, int, const char *, ...)
+void ILog::Error(const char*, int32_t, const char *, ...)
 {
 
 }
@@ -45,17 +45,17 @@ IThreadContext::~IThreadContext()
 
 }
 
-int IThreadContext::GenerateID()
+int32_t IThreadContext::GenerateID()
 {
     return 0;
 }
 
-int IThreadContext::GetID()
+int32_t IThreadContext::GetID()
 {
     return 0;
 }
 
-int IThreadContext::SetID(int v)
+int32_t IThreadContext::SetID(int v)
 {
     return 0;
 }

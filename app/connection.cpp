@@ -4,6 +4,16 @@
 #include <common/error.hpp>
 #include <common/log.hpp>
 
+IConnectionManager::IConnectionManager()
+{
+
+}
+
+IConnectionManager::~IConnectionManager()
+{
+
+}
+
 Connection::Connection(IConnectionManager *conn_manager, st_netfd_t client_stfd) : conn_manager_(conn_manager), client_stfd_(client_stfd), client_ip_(""), disposed_(false), expired_(false), id_(-1)
 {
     thread_ = new internal::Thread("connection", this, 0, false);
@@ -27,29 +37,46 @@ void Connection::Dispose()
     STCloseFd(client_stfd_);
 }
 
-int Connection::Start()
+int32_t Connection::Start()
 {
     return thread_->Start();
 }
 
-int Connection::Cycle()
+int32_t Connection::Cycle()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
     id_ = _context->GetID();
+
+    client_ip_ = Utils::GetPeerIp(st_netfd_fileno(client_stfd_));
+
+    ret = DoCycle();
+
+    if (IsClientGracefullyClose(ret))
+    {
+        ret = ERROR_SOCKET_CLOSED;
+        rs_warn("client %s disconnect peer, ret=%d", client_ip_.c_str(), ret);
+    }
+    if (ret == ERROR_SUCCESS)
+    {
+        rs_info("client %s finish", client_ip_.c_str());
+    }
+
+    thread_->StopLoop();
+    return ERROR_SUCCESS;
 }
 
-int Connection::GetID()
+int32_t Connection::GetID()
 {
-
+    return id_;
 }
 
-void Connection::SetExpire()
+void Connection::SetExpire(bool expired)
 {
-
+    expired_ = expired;
 }
 
 void Connection::OnThreadStop()
 {
-
+    conn_manager_->OnRemove(this);
 }
 

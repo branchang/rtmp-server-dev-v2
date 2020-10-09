@@ -4,7 +4,7 @@
 
 
 
-std::string Utils::GetPeerIp(int fd)
+std::string Utils::GetPeerIp(int32_t fd)
 {
     std::string ip = "";
 
@@ -26,4 +26,22 @@ std::string Utils::GetPeerIp(int fd)
 
     ip = buf;
     return ip;
+}
+
+void Utils::RandomGenerate(char *bytes, int32_t size)
+{
+    static bool rand_initialized = false;
+
+    if(!rand_initialized)
+    {
+        rand_initialized = true;
+        srand(time(nullptr));
+    }
+
+    for (int32_t i = 0; i < size; ++i)
+    {
+        // the common value in [0x0f, 0xf0]
+        bytes[i] = 0x0f + (rand() % (0xff - 0x0f - 0x0f));
+    }
+
 }

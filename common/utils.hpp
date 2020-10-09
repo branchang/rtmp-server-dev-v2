@@ -21,7 +21,7 @@
     (void)0         \
 
 #define rs_freepa(pa) \
-    if (paj)          \
+    if (pa)         \
     {                 \
         delete pa;    \
         pa = nullptr; \
@@ -34,7 +34,8 @@
 class Utils
 {
 public:
-    static std::string GetPeerIp(int fd);
+    static std::string GetPeerIp(int32_t fd);
+    static void RandomGenerate(char *bytes, int32_t size);
 };
 
 #endif

@@ -22,7 +22,7 @@ void IConfig::UnSubScribe(IReloadHandler *handler)
 
 }
 
-int IConfig::Reload()
+int32_t IConfig::Reload()
 {
     return ERROR_SUCCESS;
 }

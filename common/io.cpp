@@ -42,6 +42,16 @@ IProtocolReader::~IProtocolReader()
 
 }
 
+IProtocolWriter::IProtocolWriter()
+{
+
+}
+
+IProtocolWriter::~IProtocolWriter()
+{
+
+}
+
 IProtocolReaderWriter::IProtocolReaderWriter()
 {
 

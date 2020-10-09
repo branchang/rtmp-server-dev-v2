@@ -3,6 +3,7 @@
 
 #include <common/core.hpp>
 #include <app/listener.hpp>
+#include <app/connection.hpp>
 #include <string>
 
 enum class ListenerType
@@ -19,14 +20,14 @@ public:
     virtual ~IServerListener();
 
 public:
-    virtual int Listen(const std::string &ip, int port) = 0;
+    virtual int32_t Listen(const std::string &ip, int port) = 0;
     virtual ListenerType GetType();
 
 protected:
     Server *server_;
     ListenerType type_;
     std::string ip_;
-    int port_;
+    int32_t port_;
 };
 
 class RTMPStreamListener: virtual public IServerListener, virtual public ITCPClientHandler
@@ -36,22 +37,29 @@ public:
     virtual ~RTMPStreamListener();
 
 public:
-    virtual int Listen(const std::string &ip, int port) override;
-    virtual int OnTCPClient(st_netfd_t stfd) override;
+    virtual int32_t Listen(const std::string &ip, int port) override;
+    virtual int32_t OnTCPClient(st_netfd_t stfd) override;
 private:
     TCPListener *listener_;
 };
 
-class Server
+class Server: virtual public IConnectionManager
 {
 public:
     Server();
     virtual ~Server();
-public:
-    virtual int Initilaize();
-    virtual int InitializeST();
 
-    virtual int AcceptClient();
+public:
+    virtual int32_t Initilaize();
+    virtual int32_t InitializeST();
+
+    virtual int32_t Listen();
+
+    virtual int32_t AcceptClient(ListenerType type ,st_netfd_t stfd);
+
+    virtual void OnRemove(Connection *conn) override;
+protected:
+    virtual int32_t ListenRTMP();
 };
 
 #endif

@@ -251,4 +251,7 @@
 #define ERROR_SOURCE_NOT_FOUND              9002
 #define ERROR_USER_END                      9999
 
+
+extern bool IsClientGracefullyClose(int32_t err_code);
+
 #endif

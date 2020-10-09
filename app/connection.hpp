@@ -2,7 +2,7 @@
 #define RS_CONNECT_HPP
 #include <common/core.hpp>
 #include <common/thread.hpp>
-#include <protocol/statistics.hpp>
+#include <protocol/kbps.hpp>
 
 #include <string>
 
@@ -14,11 +14,11 @@ public:
     IConnectionManager();
     virtual ~IConnectionManager();
 public:
-    virtual void Remove(Connection *conn) = 0;
+    virtual void OnRemove(Connection *conn) = 0;
 };
 
 class Connection:
-                    // public virtual IKbpsDelta,
+                  public virtual IKbpsDelta,
                   public virtual internal::IThreadHandler
 {
 public:
@@ -26,14 +26,14 @@ public:
     virtual ~Connection();
 public:
     virtual void Dispose();
-    virtual int Start();
-    virtual int Cycle() override;
+    virtual int32_t Start();
+    virtual int32_t Cycle() override;
     virtual void OnThreadStop() override;
-    virtual int GetID();
-    virtual void SetExpire();
+    virtual int32_t GetID();
+    virtual void SetExpire(bool expired=true);
 
 protected:
-    virtual int DoCycle() = 0;
+    virtual int32_t DoCycle() = 0;
 
 protected:
     IConnectionManager *conn_manager_;
@@ -43,7 +43,7 @@ protected:
     bool expired_;
 
 private:
-    int id_;
+    int32_t id_;
     internal::Thread *thread_;
 };
 #endif

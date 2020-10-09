@@ -4,6 +4,8 @@ project(rtmp_server_dev)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+SET(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -g")
 
 find_package(Git)
 
@@ -37,6 +39,7 @@ include_directories(${PROJECT_BINARY_DIR}
 link_directories(
     ${PROJECT_BINARY_DIR}/lib
     ${PROJECT_BINARY_DIR}/common
+    ${PROJECT_BINARY_DIR}/protocol
 )
 
 message(${PROJECT_BINARY_DIR})
@@ -45,4 +48,5 @@ message(${PROJECT_BINARY_DIR})
 # include(3rdparty.cmake)
 add_subdirectory(common)
 message("make servers !!!!")
+add_subdirectory(protocol)
 add_subdirectory(app)

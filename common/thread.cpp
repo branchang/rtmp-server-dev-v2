@@ -15,7 +15,7 @@ IThreadHandler::~IThreadHandler()
 
 }
 
-int IThreadHandler::OnbeforeCycle()
+int32_t IThreadHandler::OnbeforeCycle()
 {
     return ERROR_SUCCESS;
 }
@@ -25,12 +25,12 @@ void IThreadHandler::OnThreadStart()
 
 }
 
-int IThreadHandler::Cycle()
+int32_t IThreadHandler::Cycle()
 {
     return ERROR_SUCCESS;
 }
 
-int IThreadHandler::OnEndCycle()
+int32_t IThreadHandler::OnEndCycle()
 {
     return ERROR_SUCCESS;
 }
@@ -72,11 +72,13 @@ void *Thread::Function(void *arg)
     obj->Dispatch();
 
     st_thread_exit(nullptr);
+
+    return nullptr;
 }
 
 void Thread::Dispatch()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
     _context->GenerateID();
 
     rs_info("thread %s start", name_.c_str());
@@ -134,9 +136,9 @@ void Thread::Dispatch()
     _context->ClearID();
 }
 
-int Thread::Start()
+int32_t Thread::Start()
 {
-    int ret = ERROR_SUCCESS;
+    int32_t ret = ERROR_SUCCESS;
     if (st_)
     {
         rs_warn("thread %s already running", name_.c_str());
@@ -200,6 +202,10 @@ void Thread::StopLoop()
     loop_ = false;
 }
 
+int32_t Thread::GetID()
+{
+    return cid_;
+}
 
 } //namespace internal
 
