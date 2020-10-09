@@ -4,10 +4,6 @@
 #include <common/core.hpp>
 #include <common/io.hpp>
 
-class RTMPProtocol
-{
-
-};
 
 class HandshakeBytes
 {
@@ -40,16 +36,33 @@ public:
     virtual int32_t HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw);
 };
 
+class RTMPProtocol
+{
+public:
+    RTMPProtocol(IProtocolReaderWriter *rw);
+    virtual ~RTMPProtocol();
+public:
+    virtual void SetSendTimeout(int64_t timeout_us);
+    virtual void SetRecvTimeout(int64_t timeout_us);
+
+private:
+    IProtocolReaderWriter *rw_;
+};
+
 class RTMPServer
 {
 public:
     RTMPServer(IProtocolReaderWriter *rw);
     virtual ~RTMPServer();
 public:
-    int32_t Handshake();
+    virtual int32_t Handshake();
+    virtual void SetSendTimeout(int64_t timeout_us);
+    virtual void SetRecvTimeout(int64_t timeout_us);
+
 private:
     IProtocolReaderWriter *rw_;
     HandshakeBytes *handshake_bytes_;
+    RTMPProtocol *protocol_;
 };
 
 #endif

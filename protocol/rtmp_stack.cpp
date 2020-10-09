@@ -179,6 +179,26 @@ SimpleHandshake::~SimpleHandshake()
 
 }
 
+RTMPProtocol::RTMPProtocol(IProtocolReaderWriter *rw): rw_(rw)
+{
+
+}
+
+RTMPProtocol::~RTMPProtocol()
+{
+
+}
+
+void RTMPProtocol::SetRecvTimeout(int64_t timeout_us)
+{
+    rw_->SetRecvTimeout(timeout_us);
+}
+
+void RTMPProtocol::SetSendTimeout(int64_t timeout_us)
+{
+    rw_->SetSendTimeout(timeout_us);
+}
+
 int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw)
 {
     int32_t ret = ERROR_SUCCESS;
@@ -242,5 +262,15 @@ int32_t RTMPServer::Handshake()
 
     rs_freep(handshake_bytes_);
     return ret;
+}
+
+void RTMPServer::SetRecvTimeout(int64_t timeout_us)
+{
+    protocol_->SetRecvTimeout(timeout_us);
+}
+
+void RTMPServer::SetSendTimeout(int64_t timeout_us)
+{
+    protocol_->SetSendTimeout(timeout_us);
 }
 
