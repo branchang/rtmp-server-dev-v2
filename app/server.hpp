@@ -37,7 +37,9 @@ public:
     virtual ~RTMPStreamListener();
 
 public:
+    // IServerListener
     virtual int32_t Listen(const std::string &ip, int port) override;
+    // ITCPClientHandler
     virtual int32_t OnTCPClient(st_netfd_t stfd) override;
 private:
     TCPListener *listener_;

@@ -1,13 +1,14 @@
 #ifndef RS_BUFFER_HPP
 #define RS_BUFFER_HPP
 #include <common/core.hpp>
+#include <common/io.hpp>
 #include <string>
 
-class Buffer
+class BufferReader
 {
 public:
-    Buffer();
-    virtual ~Buffer();
+    BufferReader();
+    virtual ~BufferReader();
 
 public:
 
@@ -16,9 +17,9 @@ public:
     virtual char *Data();
     virtual int32_t Size();
     virtual int32_t Pos();
+    virtual bool Empty();
     virtual bool Require(int32_t required_size);
     virtual void Skip(int32_t size);
-    virtual bool Empty();
 
     // read
     virtual int8_t Read1Bytes();
@@ -39,10 +40,35 @@ public:
     virtual void WriteBytes(char *data, int32_t size);
 
 private:
-    char *pos_;
-    char *bytes_;
-    int32_t nb_bytes_;
+    char *buf_;
+    char *ptr_;
+    int32_t size_;
 
+};
+
+class FastBuffer
+{
+public:
+    FastBuffer();
+    virtual ~FastBuffer();
+public:
+    virtual int32_t Size();
+    virtual char *Bytes();
+
+    virtual void SetBuffer(int32_t buffer_size);
+    virtual char Read1Bytes();
+    virtual char *ReadSlice(int32_t size);
+    virtual void Skip(int32_t size);
+    virtual int32_t Grow(IBufferReader *r, int32_t required_size);
+    virtual void SetMergeReadHandler(bool enable, IMergeReadHandler *mr_handler);
+
+private:
+    bool merge_read_;
+    IMergeReadHandler *mr_handler_;
+    int32_t capacity_;
+    char *buf_;
+    char *start_;
+    char *end_;
 };
 
 #endif

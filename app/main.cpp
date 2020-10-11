@@ -1,6 +1,6 @@
 #include <repo_version.h>
 #include <stdio.h>
-#include <common/fast_log.hpp>
+#include <common/log.hpp>
 #include <common/thread.hpp>
 #include <common/st.hpp>
 #include <common/core.hpp>
@@ -25,12 +25,6 @@ int32_t RunMaster()
 
 int32_t main(int argc, char *argv[])
 {
-    rs_verbose("verbose info:%s", "12341321");
-    rs_warn("warn info :%s", "12341321");
-    rs_error("error info:%s", "12341321");
-    rs_trace("trace info:%s", "12341321");
-    rs_info("info info:%s", "12341321");
-
     RunMaster();
 
     RTMPStreamListener listener(_server, ListenerType::RTMP_STEAM);
