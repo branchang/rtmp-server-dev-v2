@@ -4,11 +4,11 @@
 #include <common/io.hpp>
 #include <string>
 
-class BufferReader
+class BufferManager
 {
 public:
-    BufferReader();
-    virtual ~BufferReader();
+    BufferManager();
+    virtual ~BufferManager();
 
 public:
 

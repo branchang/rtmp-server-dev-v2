@@ -2,7 +2,136 @@
 #include <common/utils.hpp>
 #include <common/error.hpp>
 #include <common/log.hpp>
-#include <common/buffer.hpp>
+#include <core/consts.hpp>
+
+namespace rtmp
+{
+
+IMessageHander::IMessageHander()
+{
+
+}
+
+
+IMessageHander::~IMessageHander()
+{
+
+}
+
+MessageHeader::MessageHeader()
+{
+
+}
+
+MessageHeader::~MessageHeader()
+{
+
+}
+
+
+bool MessageHeader::IsAudio()
+{
+    return true;
+}
+
+bool MessageHeader::IsVideo()
+{
+    return true;
+}
+
+bool MessageHeader::IsAMF0Command()
+{
+    return true;
+}
+
+bool MessageHeader::IsAMF0Data()
+{
+    return true;
+}
+
+bool MessageHeader::IsAMF3Command()
+{
+    return true;
+}
+
+bool MessageHeader::IsAMF3Data()
+{
+    return true;
+}
+
+bool MessageHeader::IsWindowAckledgementSize()
+{
+    return true;
+}
+
+bool MessageHeader::IsAckLedgememt()
+{
+    return true;
+}
+
+bool MessageHeader::IsSetChunkSize()
+{
+    return true;
+}
+
+bool MessageHeader::IsUserControlMessage()
+{
+    return true;
+}
+
+bool MessageHeader::IsSetPeerBandWidth()
+{
+    return true;
+}
+
+bool MessageHeader::IsAggregate()
+{
+    return true;
+}
+
+void MessageHeader::InitializeAMF0Script(int32_t size, int32_t stream)
+{
+}
+
+void MessageHeader::InitializeVideo(int32_t size, uint32_t timestamp, int32_t stream)
+{
+
+}
+
+void MessageHeader::InitializeAudio(int32_t size, uint32_t timestamp, int32_t stream)
+{
+
+}
+
+
+CommonMessage::CommonMessage()
+{
+
+}
+
+CommonMessage::~CommonMessage()
+{
+
+}
+
+void CommonMessage::CreatePlayload(int32_t size)
+{
+
+}
+
+ChunkStream::ChunkStream(int cid) : cid(cid),
+                                    fmt(0),
+                                    msg(nullptr),
+                                    extended_timestamp(false),
+                                    msg_count(0)
+{
+
+}
+
+ChunkStream::~ChunkStream()
+{
+
+}
 
 
 HandshakeBytes::HandshakeBytes(): c0c1(nullptr),
@@ -90,18 +219,18 @@ int32_t HandshakeBytes::CreateC0C1()
     c0c1 = new char[1537];
     Utils::RandomGenerate(c0c1, 1537);
 
-    BufferReader buffer;
-    if ((ret = buffer.Initialize(c0c1, 9)) != ERROR_SUCCESS)
+    BufferManager manager;
+    if ((ret = manager.Initialize(c0c1, 9)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
     // c0
-    buffer.Write1Bytes(0x03);
+    manager.Write1Bytes(0x03);
     // c1
-    buffer.Write4Bytes((int32_t)::time(nullptr));
+    manager.Write4Bytes((int32_t)::time(nullptr));
 
-    buffer.Write4Bytes(0x00);
+    manager.Write4Bytes(0x00);
     return ret;
 }
 
@@ -117,21 +246,21 @@ int32_t HandshakeBytes::CreateS0S1S2(const char *c1)
 
     Utils::RandomGenerate(s0s1s2, 3073);
 
-    BufferReader buffer;
-    if((ret = buffer.Initialize(s0s1s2, 9)) != ERROR_SUCCESS)
+    BufferManager manager;
+    if((ret = manager.Initialize(s0s1s2, 9)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
     // s0
-    buffer.Write1Bytes(0x03);
+    manager.Write1Bytes(0x03);
     // s1
-    buffer.Write4Bytes((int32_t)::time(nullptr));
+    manager.Write4Bytes((int32_t)::time(nullptr));
 
     // s1 time2 copy from c1
     if (c0c1)
     {
-        buffer.WriteBytes(c0c1 + 1, 4);
+        manager.WriteBytes(c0c1 + 1, 4);
     }
 
     // s2
@@ -154,16 +283,16 @@ int32_t HandshakeBytes::CreateC2()
     c2 = new char[1536];
     Utils::RandomGenerate(c2, 1536);
 
-    BufferReader buffer;
-    if ((ret= buffer.Initialize(c2, 8)) != ERROR_SUCCESS)
+    BufferManager manager;
+    if ((ret= manager.Initialize(c2, 8)) != ERROR_SUCCESS)
     {
         return ret;
     }
 
-    buffer.Write4Bytes((int32_t)::time(nullptr));
+    manager.Write4Bytes((int32_t)::time(nullptr));
     if (s0s1s2)
     {
-        buffer.WriteBytes(s0s1s2 + 1, 4);
+        manager.WriteBytes(s0s1s2 + 1, 4);
     }
 
     return ret;
@@ -177,26 +306,6 @@ SimpleHandshake::SimpleHandshake()
 SimpleHandshake::~SimpleHandshake()
 {
 
-}
-
-RTMPProtocol::RTMPProtocol(IProtocolReaderWriter *rw): rw_(rw)
-{
-
-}
-
-RTMPProtocol::~RTMPProtocol()
-{
-
-}
-
-void RTMPProtocol::SetRecvTimeout(int64_t timeout_us)
-{
-    rw_->SetRecvTimeout(timeout_us);
-}
-
-void RTMPProtocol::SetSendTimeout(int64_t timeout_us)
-{
-    rw_->SetSendTimeout(timeout_us);
 }
 
 int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw)
@@ -240,37 +349,155 @@ int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IP
     return ret;
 }
 
-RTMPServer::RTMPServer(IProtocolReaderWriter *rw): rw_(rw)
+Protocol::Protocol(IProtocolReaderWriter *rw): rw_(rw)
 {
-    handshake_bytes_ = new HandshakeBytes;
+    in_buffer_ = new FastBuffer;
 }
 
-RTMPServer::~RTMPServer()
+Protocol::~Protocol()
 {
-    rs_freep(handshake_bytes_);
+    rs_freep(in_buffer_);
 }
 
-int32_t RTMPServer::Handshake()
+void Protocol::SetRecvTimeout(int64_t timeout_us)
 {
-    int32_t ret = ERROR_SUCCESS;
+    rw_->SetRecvTimeout(timeout_us);
+}
 
-    SimpleHandshake simple_handshake;
-    if ((ret = simple_handshake.HandshakeWithClient(handshake_bytes_, rw_)) != ERROR_SUCCESS)
+void Protocol::SetSendTimeout(int64_t timeout_us)
+{
+    rw_->SetSendTimeout(timeout_us);
+}
+
+int Protocol::ReadBasicHeader(char &fmt, int &cid)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = in_buffer_->Grow(rw_, 1)) != ERROR_SUCCESS)
     {
+        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        {
+            rs_error("read 1 bytes basic header failed, ret=%d", ret);
+        }
         return ret;
     }
 
-    rs_freep(handshake_bytes_);
+    // 0 1 2 3 4 5 6 7
+    // +-+-+-+-+-+-+-+-+
+    // |fmt|   cs id   |
+    // +-+-+-+-+-+-+-+-+
+    fmt = in_buffer_->Read1Bytes();
+    cid = fmt & 0x3f;
+    fmt = (fmt >> 6) & 0x03;
+
+    // Value 0 indicates the ID in the range of
+    // 64–319 (the second byte + 64). Value 1 indicates the ID in the range
+    // of 64–65599 ((the third byte)*256 + the second byte + 64). Value 2
+    // indicates its low-level protocol message. There are no additional
+    // bytes for stream IDs. Values in the range of 3–63 represent the
+    // complete stream ID. There are no additional bytes used to represent
+    // it.
+
+    // 2-63
+    if (cid > 1)
+    {
+        rs_verbose("basic header parsed,fmt=%d, cid=%d", fmt, cid);
+        return ret;
+    }
+    // 64-319
+    if (cid == 0)
+    {
+        if ((ret = in_buffer_->Grow(rw_, 1)) != ERROR_SUCCESS)
+        {
+            if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            {
+                rs_error("read 2 bytes basic header failed, ret=%d", ret);
+            }
+            return ret;
+        }
+
+        cid = 64;
+        cid += (uint8_t)in_buffer_->Read1Bytes();
+        rs_verbose("basic header parsed, fmt=%d, cid=%d", fmt, cid);
+    }
+    // 64-65599
+    else if (cid == 1)
+    {
+        if ((ret = in_buffer_->Grow(rw_, 2)) != ERROR_SUCCESS)
+        {
+            if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            {
+                rs_error("read 3 bytes basic header failed, ret=%d", ret);
+            }
+            return ret;
+        }
+        cid = 64;
+        cid += (uint8_t)in_buffer_->Read1Bytes();
+        cid += ((uint8_t)in_buffer_->Read1Bytes()) * 256;
+        rs_verbose("basic header parsed,fmt=%d, cid=%d", fmt, cid);
+    }
+    else
+    {
+        ret  = ERROR_RTMP_BASIC_HEADER;
+        rs_error("invaild cid, impossible basic header");
+    }
     return ret;
 }
 
-void RTMPServer::SetRecvTimeout(int64_t timeout_us)
+int Protocol::ReadRTMPMsgHeader(ChunkStream *cs, char fmt)
 {
-    protocol_->SetRecvTimeout(timeout_us);
+    int ret = ERROR_SUCCESS;
+    return ret;
 }
 
-void RTMPServer::SetSendTimeout(int64_t timeout_us)
+int Protocol::ReadInterlacedMessage(CommonMessage **pmsg)
 {
-    protocol_->SetSendTimeout(timeout_us);
+    int ret = ERROR_SUCCESS;
+    char fmt = 0;
+    int cid = 0;
+    if ((ret = ReadBasicHeader(fmt, cid)) != ERROR_SUCCESS)
+    {
+        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        {
+            rs_error("read basic header failed, ret=%d", ret);
+        }
+        return ret;
+    }
+    rs_verbose("read basic header success, fmt=%d, cid=%d", fmt, cid);
+    ChunkStream *cs = nullptr;
+    if (cid < RS_CONSTS_CHUNK_STREAM_CHCAHE)
+    {
+        rs_verbose("cs-cache hint, cid=%d", cid);
+        cs = cs_cache_[cid];
+        rs_verbose("cache chunk stream:fmt=%d,cid=%d,size=%d,msg(type=%d,size=%d,time=%lld,sid=%d)",
+                    fmt, cid, (cs->msg ? cs->msg->size : 0),
+                    cs->header.message_type, cs->header.payload_length,
+                    cs->header.timestamp, cs->header.stream_id);
+
+    }
+    else
+    {
+        if (chunk_stream_.find(cid) == chunk_stream_.end())
+        {
+            cs = new ChunkStream(cid);
+            cs->header.perfer_cid = cid;
+            chunk_stream_[cid] = cs;
+            rs_verbose("cache new chunk stream:fmt=%d, cid=%d", fmt, cid);
+        }
+        else
+        {
+            cs = chunk_stream_[cid];
+            rs_verbose("cache chunk stream:fmt=%d,cid=%d,size=%d,msg(type=%d,size=%d,time=%lld,sid=%d)",
+                        fmt, cid, (cs->msg ? cs->msg->size : 0),
+                        cs->header.message_type, cs->header.payload_length,
+                        cs->header.timestamp, cs->header.stream_id);
+        }
+
+    }
+
+    return ret;
 }
 
+
+
+}

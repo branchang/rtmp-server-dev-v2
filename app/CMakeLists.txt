@@ -1,10 +1,10 @@
 
 add_executable(rtmp_server_dev EXCLUDE_FROM_ALL
     main.cpp
-    connection.cpp
     recv_thread.cpp
     server.cpp
     rtmp_connection.cpp
+    rtmp_server.cpp
 )
 
 add_dependencies(rtmp_server_dev

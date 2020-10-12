@@ -13,7 +13,8 @@ RTMPConnection::~RTMPConnection()
 
 int32_t RTMPConnection::DoCycle()
 {
-    return rtmp_->Handshake();
+    rtmp_->Handshake();
+    rtmp_->RecvMessage(nullptr);
 }
 
 void RTMPConnection::Reasample()

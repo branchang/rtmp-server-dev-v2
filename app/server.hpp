@@ -1,9 +1,9 @@
-#ifndef RS_RTMP_SERVER_HPP
-#define RS_RTMP_SERVER_HPP
+#ifndef RS_SERVER_HPP
+#define RS_SERVER_HPP
 
 #include <common/core.hpp>
 #include <common/listener.hpp>
-#include <app/connection.hpp>
+#include <common/connection.hpp>
 #include <string>
 
 enum class ListenerType

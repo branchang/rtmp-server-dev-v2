@@ -3,7 +3,90 @@
 
 #include <common/core.hpp>
 #include <common/io.hpp>
+#include <common/buffer.hpp>
+// #include <protocol/rtmp_message.hpp>
 
+#include <map>
+
+namespace rtmp
+{
+
+class RTMPCommonMessage;
+
+class IMessageHander
+{
+public:
+    IMessageHander();
+    virtual ~IMessageHander();
+
+public:
+    virtual bool CanHandler() = 0;
+    virtual int32_t Handle(RTMPCommonMessage *msg) = 0 ;
+    virtual void OnRecvError(int32_t ret) = 0;
+    virtual void OnThreadStart() = 0;
+    virtual void OnThreadStop() = 0;
+
+};
+
+class MessageHeader
+{
+public:
+    int32_t timestamp_delta;
+    int32_t payload_length;
+    int8_t message_type;
+    int32_t stream_id;
+    int64_t timestamp;
+    int32_t perfer_cid;
+
+public:
+    MessageHeader();
+    virtual ~MessageHeader();
+
+public:
+    bool IsAudio();
+    bool IsVideo();
+    bool IsAMF0Command();
+    bool IsAMF0Data();
+    bool IsAMF3Command();
+    bool IsAMF3Data();
+    bool IsWindowAckledgementSize();
+    bool IsAckLedgememt();
+    bool IsSetChunkSize();
+    bool IsUserControlMessage();
+    bool IsSetPeerBandWidth();
+    bool IsAggregate();
+
+    void InitializeAMF0Script(int32_t size, int32_t stream);
+    void InitializeVideo(int32_t size, uint32_t timestamp, int32_t stream);
+    void InitializeAudio(int32_t size, uint32_t timestamp, int32_t stream);
+};
+
+class CommonMessage
+{
+public:
+    CommonMessage();
+    virtual ~CommonMessage();
+public:
+    virtual void CreatePlayload(int32_t size);
+public:
+    MessageHeader header;
+    int32_t size;
+    char *payload;
+};
+
+class ChunkStream
+{
+public:
+    ChunkStream(int cid);
+    virtual ~ChunkStream();
+public:
+    int cid;
+    char fmt;
+    CommonMessage *msg;
+    bool extended_timestamp;
+    int msg_count;
+    MessageHeader header;
+};
 
 class HandshakeBytes
 {
@@ -36,33 +119,27 @@ public:
     virtual int32_t HandshakeWithClient(HandshakeBytes *handshake_bytes, IProtocolReaderWriter *rw);
 };
 
-class RTMPProtocol
+class Protocol
 {
 public:
-    RTMPProtocol(IProtocolReaderWriter *rw);
-    virtual ~RTMPProtocol();
+    Protocol(IProtocolReaderWriter *rw);
+    virtual ~Protocol();
 public:
     virtual void SetSendTimeout(int64_t timeout_us);
     virtual void SetRecvTimeout(int64_t timeout_us);
+    virtual int ReadInterlacedMessage(CommonMessage **pmsg);
+
+protected:
+    virtual int ReadBasicHeader(char &fmt, int &cid);
+    virtual int ReadRTMPMsgHeader(ChunkStream *cs, char fmt);
 
 private:
     IProtocolReaderWriter *rw_;
+    FastBuffer *in_buffer_;
+    ChunkStream **cs_cache_;
+    std::map<int, ChunkStream *> chunk_stream_;
 };
 
-class RTMPServer
-{
-public:
-    RTMPServer(IProtocolReaderWriter *rw);
-    virtual ~RTMPServer();
-public:
-    virtual int32_t Handshake();
-    virtual void SetSendTimeout(int64_t timeout_us);
-    virtual void SetRecvTimeout(int64_t timeout_us);
-
-private:
-    IProtocolReaderWriter *rw_;
-    HandshakeBytes *handshake_bytes_;
-    RTMPProtocol *protocol_;
-};
+} // namespace rtmp
 
 #endif
