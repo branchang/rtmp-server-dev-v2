@@ -2,6 +2,7 @@
 #include <common/utils.hpp>
 #include <common/error.hpp>
 #include <app/rtmp_server.hpp>
+#include <protocol/rtmp_stack.hpp>
 
 RTMPServer::RTMPServer(IProtocolReaderWriter *rw): rw_(rw)
 {
@@ -41,5 +42,18 @@ void RTMPServer::SetSendTimeout(int64_t timeout_us)
 
 int32_t RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
 {
-    protocol_->ReadInterlacedMessage(pmsg);
+    protocol_->RecvMessage(pmsg);
+}
+
+int RTMPServer::ConnectApp(rtmp::Request *req)
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::CommonMessage *msg = nullptr;
+
+    rtmp::ConnectAppPacket *pkt = nullptr;
+    if ((ret = protocol_->ExceptMessage<rtmp::ConnectAppPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+    {
+
+    }
+    return ret;
 }

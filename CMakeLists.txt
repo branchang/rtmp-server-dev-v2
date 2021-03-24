@@ -30,6 +30,8 @@ file(WRITE ${PROJECT_BINARY_DIR}/repo_version.h
 )
 
 include_directories(${PROJECT_BINARY_DIR}
+    "/usr/local/Cellar/llvm/10.0.0_3/lib/clang/10.0.0/include"
+    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include"
     ${PROJECT_BINARY_DIR}/include
     ${PROJECT_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}

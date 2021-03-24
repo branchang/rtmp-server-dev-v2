@@ -1,8 +1,8 @@
 include(ExternalProject)
 
-set(PWD_DIR $(PROJECT_BINARY_DIR))
-set(INC_DIR $(PWD_DIR)/incldue)
-set(LIB_DIR $(PWD_DIR)/lib)
+set(PWD_DIR ${PROJECT_BINARY_DIR})
+set(INC_DIR ${PWD_DIR}/include)
+set(LIB_DIR ${PWD_DIR}/lib)
 # set(MANUAL_BUDIL false)
 
 # if (NOT EXISTS "${INC_DIR}")
@@ -31,6 +31,6 @@ ExternalProject_Add(
     CONFIGURE_COMMAND ""
     BUILD_IN_SOURCE 1
     BUILD_COMMAND make linux-optimized
-    INSTALL_COMMAND cp ${PWD_DIR}/st-1.9/obj/st.h -f ${INC_DIR} && cp ${PWD_DIR}/st-1.9/libst.a ${LIB_DIR} -f
+    INSTALL_COMMAND cp ${PWD_DIR}/st-1.9/obj/st.h -f ${INC_DIR} && cp ${PWD_DIR}/st-1.9/obj/libst.a ${LIB_DIR} -f
 
 )

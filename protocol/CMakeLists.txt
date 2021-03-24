@@ -1,6 +1,6 @@
 add_library(protocol
-    # rtmp_message.cpp
     rtmp_stack.cpp
+    rtmp_amf0.cpp
 )
 
 
