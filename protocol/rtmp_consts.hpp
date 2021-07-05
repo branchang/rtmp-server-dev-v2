@@ -9,6 +9,9 @@
 
 #define RTMP_CONSTS_CHUNK_STREAM_CHCAHE 16
 
+//rtmp default port
+#define RTMP_DEFAULT_PORT 1935
+
 // rtmp message header type
 #define RTMP_FMT_TYPE0 0
 #define RTMP_FMT_TYPE1 1
@@ -49,7 +52,7 @@
 // amf0 command message
 #define RTMP_AMF0_COMMAND_CONNECT "connect"
 
-// amf0 marker
+//amf0 marker
 #define RTMP_AMF0_NUMBER 0x00
 #define RTMP_AMF0_BOOLEAN 0x01
 #define RTMP_AMF0_STRING 0x02
@@ -64,8 +67,26 @@
 #define RTMP_AMF0_DATE 0x0b
 #define RTMP_AMF0_LONG_STRING 0x0c
 #define RTMP_AMF0_UNSUPPORTED 0x0d
-#define RTMP_AMF0_RECORD_SET 0x0e 
+#define RTMP_AMF0_RECORD_SET 0x0e
 #define RTMP_AMF0_XML_DOCUMENT 0x0f
 #define RTMP_AMF0_TYPED_OBJECT 0x10
+// may be is amf3
+#define RTMP_AMF0_AVM_PLUS_OBJECT 0x11
+#define RTMP_AMF0_ORIGIN_STRICT_ARRAY 0x20
+#define RTMP_AMF0_INVALID 0x3f
+
+// amf0 elem size
+#define AMF0_LEN_UTF8(a) (2+(a).length())
+#define AMF0_LEN_STR(a) (1 + AMF0_LEN_UTF8(a))
+#define AMF0_LEN_NUMBER (1 + 8)
+#define AMF0_LEN_DATE (1 + 8 + 2)
+#define AMF0_LEN_NULL (1)
+#define AMF0_LEN_UNDEFINED (1)
+#define AMF0_LEN_BOOLEAN (1 + 1)
+#define AMF0_LEN_OBJECT(a) ((a)->TotalSize())
+#define AMF0_LEN_OBJ_EOF (2 + 1)
+#define AMF0_LEN_ECMA_ARR(a) ((a)->TotalSize())
+#define AMF0_LEN_STRICT_ARR(a) ((a)->TotalSize())
+#define AMF0_LEN_ANY(a) ((a)->TotalSize())
 
 #endif

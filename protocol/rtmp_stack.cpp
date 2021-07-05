@@ -516,18 +516,16 @@ int SetChunkSizePacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
-ConnectAppPacket::ConnectAppPacket()
+ConnectAppPacket::ConnectAppPacket(): command_name(RTMP_AMF0_COMMAND_CONNECT),
+                                      transaction_id(1),
+                                      args(nullptr)
 {
-    command_name = RTMP_AMF0_COMMAND_CONNECT;
-    transaction_id = 1;
-    command_obj = AMF0Any::Object();
-    args = nullptr;
-
+    command_object = AMF0Any::Object();
 }
 
 ConnectAppPacket::~ConnectAppPacket()
 {
-    rs_freep(command_obj);
+    rs_freep(command_object);
     rs_freep(args);
 }
 
@@ -553,22 +551,45 @@ int ConnectAppPacket::Decode(BufferManager *manager)
         return ret;
     }
 
-    if (transaction_id != 1.00)
+    if (transaction_id != 1.0)
     {
-        // beacause some client don't send transcode_id=1.00, only warn them
-        rs_warn("amf0 decode connect transaction incorrect, transaction_id:%.2f, required:%.2f", 1.00, transaction_id);
+        // beacause some client don't send transcode_id=1.0, only warn them
+        rs_warn("amf0 decode connect transaction_id incorrect, transaction_id:%.2f, required:%.2f", 1.0, transaction_id);
     }
+
+    if (!manager->Empty())
+    {
+        rs_freep(args);
+
+        AMF0Any *p = nullptr;
+        if ((ret=AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
+        {
+            rs_error("amf0 decode connect args failed, ret=%d",ret);
+            return ret;
+        }
+
+        if (!p->IsObject())
+        {
+            rs_warn("drop connect args,marker=%#x", p->marker);
+            rs_freep(p);
+        }
+        else{
+            args = p->ToObject();
+        }
+    }
+    rs_info("amf0 decode connect request success");
+
     return ret;
 }
 
 int ConnectAppPacket::GetPreferCID()
 {
-
+    return RTMP_CID_OVER_CONNECTION;
 }
 
 int ConnectAppPacket::GetMessageType()
 {
-
+    return RTMP_MSG_AMF0_COMMAND;
 }
 
 int ConnectAppPacket::GetSize()

@@ -74,12 +74,11 @@ void IThreadContext::ClearID()
 #define LOG_TAIL '\n'
 #define LOG_TAIL_SIZE 1
 
-FastLog::FastLog() : log_data_(new char[LOG_MAX_SIZE]),
-                     fd_(-1),
+FastLog::FastLog() : fd_(-1),
                      log_to_file_tank_(false),
                      utc_(false)
 {
-
+    log_data_ = new char[LOG_MAX_SIZE];
 }
 
 FastLog::~FastLog()

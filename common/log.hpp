@@ -97,10 +97,10 @@ protected:
 protected:
     int32_t level_;
 private:
-    char *log_data_;
     int32_t fd_;
     bool log_to_file_tank_;
     bool utc_;
+    char *log_data_;
 };
 
 class ThreadContext:public IThreadContext

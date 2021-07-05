@@ -186,8 +186,8 @@ protected:
 public:
     std::string command_name;
     double transaction_id;
-    AMF0Object *command_obj;
     AMF0Object *args;
+    AMF0Object *command_object;
 };
 
 
