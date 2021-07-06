@@ -36,6 +36,13 @@ class Utils
 public:
     static std::string GetPeerIp(int32_t fd);
     static void RandomGenerate(char *bytes, int32_t size);
+    static std::string StringReplace(const std::string &str, const std::string &oldstr, const std::string &newstr);
+    static bool StringEndsWith(const std::string &srt, const std::string &flag);
+    static std::string StringEraseLastSubstr(const std::string &str, const std::string &erase_str);
+    static std::string StringTrimStart(const std::string &str, const std::string &trim_chars);
+    static std::string StringTrimEnd(const std::string &str, const std::string &trim_chars);
+    static std::string StringRemove(const std::string &str, const std::string &remove_chars);
+
 };
 
 
@@ -55,7 +62,7 @@ public:
     {
         if(is_array_)
         {
-            delete[] *p_;
+            delete[] * p_;
         }
         else
         {

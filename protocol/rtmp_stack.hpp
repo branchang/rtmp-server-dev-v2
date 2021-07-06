@@ -15,6 +15,15 @@
 namespace rtmp
 {
 
+extern void DiscoveryTcUrl(const std::string &tc_url,
+                            std::string &schema,
+                            std::string &host,
+                            std::string &vhost,
+                            std::string &app,
+                            std::string &stream,
+                            std::string &port,
+                            std::string &param);
+
 class CommonMessage;
 
 class IMessageHander
@@ -128,6 +137,25 @@ class Request
 public:
     Request();
     virtual ~Request();
+public:
+    void Strip();
+public:
+    //base attributes
+    std::string ip;
+    std::string tc_url;
+    std::string page_url;
+    std::string swf_url;
+    double object_encoding;
+    // parsed attributes
+    std::string schema;
+    std::string vhost;
+    std::string host;
+    std::string port;
+    std::string app;
+    std::string param;
+    std::string stream;
+    double duration;
+    AMF0Object *args;
 };
 
 class Packet
@@ -217,7 +245,7 @@ public:
     virtual int DecodeMessage(CommonMessage *msg, Packet **ppacket);
 
     template <typename T>
-    int ExceptMessage(CommonMessage **pmsg, T **ppacket)
+    int ExpectMessage(CommonMessage **pmsg, T **ppacket)
     {
         int ret = ERROR_SUCCESS;
         while (true)
