@@ -318,6 +318,10 @@ AMF0ObjectEOF::AMF0ObjectEOF()
     marker = RTMP_AMF0_OBJECT_END;
 }
 
+AMF0ObjectEOF::~AMF0ObjectEOF()
+{
+}
+
 int AMF0ObjectEOF::Read(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
@@ -394,6 +398,11 @@ int AMF0ObjectEOF::TotalSize()
 AMF0Any *AMF0ObjectEOF::Copy()
 {
     return new AMF0ObjectEOF();
+}
+
+AMF0String::AMF0String(const std::string &v) : value(v)
+{
+    marker = RTMP_AMF0_STRING;
 }
 
 AMF0String::~AMF0String()

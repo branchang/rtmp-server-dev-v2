@@ -49,7 +49,7 @@ public:
 public:
     virtual int32_t Write(void *buf, size_t size, ssize_t *nwrite) = 0;
     // TODO
-    virtual int32_t Writev(const struct iovec *buf, size_t size, ssize_t *nwrite) = 0;
+    virtual int32_t WriteEv(const struct iovec *buf, size_t size, ssize_t *nwrite) = 0;
 };
 
 class IStatistic

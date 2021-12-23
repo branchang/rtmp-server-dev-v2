@@ -24,7 +24,7 @@ public:
     virtual int32_t Read(void *buf, size_t size, ssize_t *nread) override;
     virtual int32_t ReadFully(void *buf, size_t size, ssize_t *nread) override;
     virtual int32_t Write(void *buf, size_t size, ssize_t *nread) override;
-    virtual int32_t Writev(const struct iovec *iov, size_t iov_size, ssize_t *nwrite) override;
+    virtual int32_t WriteEv(const struct iovec *iov, size_t iov_size, ssize_t *nwrite) override;
 
 private:
     st_netfd_t stfd_;

@@ -45,7 +45,7 @@ void Utils::RandomGenerate(char *bytes, int32_t size)
     }
 }
 
-std::string StringReplace(const std::string &str, const std::string &oldstr, const std::string &newstr)
+std::string Utils::StringReplace(const std::string &str, const std::string &oldstr, const std::string &newstr)
 {
     std::string retstr = str;
     if (oldstr == newstr)
@@ -62,12 +62,12 @@ std::string StringReplace(const std::string &str, const std::string &oldstr, con
     return retstr;
 }
 
-bool StringEndsWith(const std::string &str, const std::string &flag)
+bool Utils::StringEndsWith(const std::string &str, const std::string &flag)
 {
     return str.rfind(flag) == (str.length() - flag.length());
 }
 
-std::string StringEraseLastSubstr(const std::string &str, const std::string &erase_str)
+std::string Utils::StringEraseLastSubstr(const std::string &str, const std::string &erase_str)
 {
     std::string retstr = str;
 
@@ -79,7 +79,7 @@ std::string StringEraseLastSubstr(const std::string &str, const std::string &era
     return retstr;
 }
 
-std::string StringTrimStart(const std::string &str, const std::string &trim_chars)
+std::string Utils::StringTrimStart(const std::string &str, const std::string &trim_chars)
 {
     std::string retstr = str;
 
@@ -96,7 +96,7 @@ std::string StringTrimStart(const std::string &str, const std::string &trim_char
     return retstr;
 }
 
-std::string StringTrimEnd(const std::string &str, const std::string &trim_chars)
+std::string Utils::StringTrimEnd(const std::string &str, const std::string &trim_chars)
 {
     std::string retstr = str;
 
@@ -114,7 +114,7 @@ std::string StringTrimEnd(const std::string &str, const std::string &trim_chars)
 
 }
 
-std::string StringRemove(const std::string &str, const std::string &remove_chars)
+std::string Utils::StringRemove(const std::string &str, const std::string &remove_chars)
 {
     std::string retstr = str;
 
@@ -125,7 +125,7 @@ std::string StringRemove(const std::string &str, const std::string &remove_chars
         {
             if (*it == ch)
             {
-                retstr.erase(it);
+                it = retstr.erase(it);
             }
             else
             {

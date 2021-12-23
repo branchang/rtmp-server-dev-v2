@@ -17,7 +17,7 @@ static void vhost_resolve(std::string &vhost, std::string &app, std::string &par
     app = Utils::StringReplace(app, "...", "?");
     app = Utils::StringReplace(app, "&&", "?");
     app = Utils::StringReplace(app, "=", "?");
-    if (Utils::StringEndsWith(app, "/_definst_"));
+    if (Utils::StringEndsWith(app, "/_definst_"))
     {
         app = Utils::StringEraseLastSubstr(app, "/_definst_");
     }
@@ -40,6 +40,68 @@ static void vhost_resolve(std::string &vhost, std::string &app, std::string &par
             }
         }
     }
+}
+
+static int chunk_header_c0(int perfer_cid, uint32_t timestamp, int32_t payload_length,
+                            int8_t message_type, int32_t stream_id, char *buf)
+{
+    char *pp = nullptr;
+    char *p = buf;
+
+    *p++ = 0x00 | (0x3f & perfer_cid);
+    if (timestamp < RTMP_EXTENDED_TIMESTAMPE)
+    {
+        pp = (char *)&timestamp;
+        *p++ = pp[2];
+        *p++ = pp[1];
+        *p++ = pp[0];
+    }
+    else{
+        *p++ = 0xff;
+        *p++ = 0xff;
+        *p++ = 0xff;
+    }
+
+    pp = (char *)&payload_length;
+    *p++ = p[2];
+    *p++ = p[1];
+    *p++ = p[0];
+
+    *p++ = message_type;
+
+    pp = (char *)&stream_id;
+    *p++ = pp[3];
+    *p++ = pp[2];
+    *p++ = pp[1];
+    *p++ = pp[0];
+
+    if (timestamp >= RTMP_EXTENDED_TIMESTAMPE)
+    {
+        pp = (char *)&timestamp;
+        *p++ = pp[3];
+        *p++ = pp[2];
+        *p++ = pp[1];
+        *p++ = pp[0];
+    }
+
+    return p - buf;
+}
+
+static int chunk_header_c3(int perfer_cid, uint32_t timestamp, char *buf)
+{
+    char *pp = nullptr;
+    char *p = buf;
+
+    *p++ = 0xC0 | (0x3f & perfer_cid);
+    if (timestamp >= RTMP_EXTENDED_TIMESTAMPE)
+    {
+        pp = (char *)&timestamp;
+        *p++ = pp[3];
+        *p++ = pp[2];
+        *p++ = pp[1];
+        *p++ = pp[0];
+    }
+    return p - buf;
 }
 
 extern void DiscoveryTcUrl(const std::string &tc_url,
@@ -487,16 +549,16 @@ Request::~Request()
 
 void Request::Strip()
 {
-    host = Utils::StringRemove(host, "/ \n\r\t");
-    vhost = Utils::StringRemove(vhost, "/ \n\r\t");
-    app = Utils::StringRemove(app, " \n\r\t");
-    stream = Utils::StringRemove(stream, " \n\r\t");
+    // host = Utils::StringRemove(host, "/ \n\r\t");
+    // vhost = Utils::StringRemove(vhost, "/ \n\r\t");
+    // app = Utils::StringRemove(app, " \n\r\t");
+    // stream = Utils::StringRemove(stream, " \n\r\t");
 
-    app = Utils::StringTrimEnd(app, "/");
-    stream = Utils::StringTrimEnd(stream, "/");
+    // app = Utils::StringTrimEnd(app, "/");
+    // stream = Utils::StringTrimEnd(stream, "/");
 
-    app = Utils::StringTrimStart(app, "/");
-    stream = Utils::StringTrimStart(stream, "/");
+    // app = Utils::StringTrimStart(app, "/");
+    // stream = Utils::StringTrimStart(stream, "/");
 }
 
 Packet::Packet()
@@ -701,12 +763,65 @@ int ConnectAppPacket::GetMessageType()
 
 int ConnectAppPacket::GetSize()
 {
-
+    return 0;
 }
 
 int ConnectAppPacket::EncodePacket(BufferManager *manager)
 {
+    return 0;
+}
 
+SetWindowAckSizePacket::SetWindowAckSizePacket() : ackowledgement_window_size(0)
+{
+
+}
+
+SetWindowAckSizePacket::~SetWindowAckSizePacket()
+{
+
+}
+
+int SetWindowAckSizePacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    if (!manager->Require(4))
+    {
+        ret = ERROR_RTMP_MESSAGE_DECODE;
+        rs_error("decode set_ackowledgement_window_size packet failed,ret=%d", ret);
+        return ret;
+    }
+
+    ackowledgement_window_size = manager->Read4Bytes();
+    return ret;
+}
+
+int SetWindowAckSizePacket::GetPreferCID()
+{
+    return RTMP_CID_PROTOCOL_CONTROL;
+}
+
+int SetWindowAckSizePacket::GetMessageType()
+{
+    return RTMP_MSG_WINDOW_ACK_SIZE;
+}
+
+int SetWindowAckSizePacket::GetSize()
+{
+    return 4;
+}
+int SetWindowAckSizePacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!manager->Require(4))
+    {
+        ret = ERROR_RTMP_MESSAGE_ENCODE;
+        rs_error("encode setackowledgement-window_size packet failed,ret=%d", ret);
+        return ret;
+    }
+
+    manager->Write4Bytes(ackowledgement_window_size);
+    return ret;
 }
 
 AckWindowSize::AckWindowSize() : window(0),
@@ -727,8 +842,8 @@ AckWindowSize::~AckWindowSize()
 Protocol::Protocol(IProtocolReaderWriter *rw): rw_(rw)
 {
     in_buffer_ = new FastBuffer;
-    cs_cache_ = new ChunkStream *[RTMP_CONSTS_CHUNK_STREAM_CHCAHE];
-    for (int cid = 0;cid < RTMP_CONSTS_CHUNK_STREAM_CHCAHE; cid++)
+    cs_cache_ = new ChunkStream *[RTMP_CHUNK_STREAM_CHCAHE];
+    for (int cid = 0;cid < RTMP_CHUNK_STREAM_CHCAHE; cid++)
     {
         ChunkStream *cs = new ChunkStream(cid);
         cs->header.perfer_cid = cid;
@@ -738,7 +853,33 @@ Protocol::Protocol(IProtocolReaderWriter *rw): rw_(rw)
 
 Protocol::~Protocol()
 {
+    {
+        std::map<int, ChunkStream *>::iterator it;
+        for (it = chunk_stream_.begin(); it != chunk_stream_.end();)
+        {
+            ChunkStream *cs = it->second;
+            rs_freep(cs);
+            it = chunk_stream_.erase(it);
+        }
+    }
+    {
+        std::vector<Packet *>::iterator it;
+        for (it = manual_response_queue_.begin(); it != manual_response_queue_.end();)
+        {
+            Packet *packet = *it;
+            rs_freep(packet);
+            it = manual_response_queue_.erase(it);
+        }
+    }
+
     rs_freep(in_buffer_);
+
+    for (int cid =0; cid < RTMP_CHUNK_STREAM_CHCAHE; cid++)
+    {
+        ChunkStream *cs = cs_cache_[cid];
+        rs_freep(cs);
+    }
+    rs_freep(cs_cache_);
 }
 
 void Protocol::SetRecvTimeout(int64_t timeout_us)
@@ -757,7 +898,8 @@ int Protocol::ReadBasicHeader(char &fmt, int &cid)
 
     if ((ret = in_buffer_->Grow(rw_, 1)) != ERROR_SUCCESS)
     {
-        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        // if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        if (!IsClientGracefullyClose(ret))
         {
             rs_error("read 1 bytes basic header failed, ret=%d", ret);
         }
@@ -791,7 +933,8 @@ int Protocol::ReadBasicHeader(char &fmt, int &cid)
     {
         if ((ret = in_buffer_->Grow(rw_, 1)) != ERROR_SUCCESS)
         {
-            if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            // if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            if (!IsClientGracefullyClose(ret))
             {
                 rs_error("read 2 bytes basic header failed, ret=%d", ret);
             }
@@ -807,7 +950,8 @@ int Protocol::ReadBasicHeader(char &fmt, int &cid)
     {
         if ((ret = in_buffer_->Grow(rw_, 2)) != ERROR_SUCCESS)
         {
-            if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            // if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            if (!IsClientGracefullyClose(ret))
             {
                 rs_error("read 3 bytes basic header failed, ret=%d", ret);
             }
@@ -879,7 +1023,8 @@ int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
     rs_verbose("calc chunk message header size, fmt=%d, mh_size=%d", fmt, mh_size);
     if (mh_size > 0 && (ret = in_buffer_->Grow(rw_, mh_size)) != ERROR_SUCCESS)
     {
-        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        // if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        if (!IsClientGracefullyClose(ret))
         {
             rs_error("read %d bytes message header failed, ret=%d", mh_size, ret);
 
@@ -954,7 +1099,8 @@ int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
         rs_verbose("read header ext time, fmt=%d, ext_time=%d, mh_size=%d", fmt, cs->extended_timestamp, mh_size);
         if ((ret = in_buffer_->Grow(rw_, 4)) != ERROR_SUCCESS)
         {
-            if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            // if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+            if (!IsClientGracefullyClose(ret))
             {
                 rs_error("read %d bytes message header failed, required_size= %d, ret=%d", mh_size, 4, ret);
 
@@ -1020,7 +1166,8 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
 
     if ((ret = in_buffer_->Grow(rw_, payload_size)) != ERROR_SUCCESS)
     {
-        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        // if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        if (!IsClientGracefullyClose(ret))
         {
             rs_error("read payload failed, required_size=%d, ret=%d", payload_size, ret);
         }
@@ -1054,7 +1201,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage **pmsg)
     int cid = 0;
     if ((ret = ReadBasicHeader(fmt, cid)) != ERROR_SUCCESS)
     {
-        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        if (!IsClientGracefullyClose(ret))
         {
             rs_error("read basic header failed, ret=%d", ret);
         }
@@ -1063,7 +1210,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage **pmsg)
 
     rs_verbose("read basic header success, fmt=%d, cid=%d", fmt, cid);
     ChunkStream *cs = nullptr;
-    if (cid < RTMP_CONSTS_CHUNK_STREAM_CHCAHE)
+    if (cid < RTMP_CHUNK_STREAM_CHCAHE)
     {
         rs_verbose("cs-cache hint, cid=%d", cid);
         cs = cs_cache_[cid];
@@ -1108,7 +1255,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage **pmsg)
     if ((ret = ReadMessagePayload(cs, &msg)) != ERROR_SUCCESS)
     {
 
-        if (ret != ERROR_SOCKET_TIMEOUT && !IsClientGracefullyClose(ret))
+        if (!IsClientGracefullyClose(ret))
         {
             rs_error("read message payload failed,ret=%d", ret);
         }
@@ -1136,7 +1283,7 @@ int Protocol::RecvMessage(CommonMessage **pmsg)
         CommonMessage *msg = nullptr;
         if ((ret = RecvInterlacedMessage(&msg)) != ERROR_SUCCESS)
         {
-            if (ret != ERROR_SOCKET_TIMEOUT && IsClientGracefullyClose(ret))
+            if (!IsClientGracefullyClose(ret))
             {
                 rs_error("recv interlaced message failed,ret=%d", ret);
             }
@@ -1233,6 +1380,96 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
     return ret;
 }
 
+int Protocol::OnSendPacket(MessageHeader *header, Packet *packet)
+{
+    int ret = ERROR_SUCCESS;
+    switch (header->message_type)
+    {
+        case RTMP_MSG_WINDOW_ACK_SIZE:
+            SetWindowAckSizePacket *pkt = dynamic_cast<SetWindowAckSizePacket *>(packet);
+            out_ack_size_.window = (uint32_t)pkt->ackowledgement_window_size;
+            break;
+    }
+    return ret;
+}
+
+int Protocol::DoSendAndFreePacket(Packet *packet, int stream_id)
+{
+    int ret = ERROR_SUCCESS;
+
+    rs_auto_free(Packet, packet);
+
+    int size = 0;
+    char *payload = nullptr;
+
+    if ((ret = packet->Encode(size, payload)) != ERROR_SUCCESS)
+    {
+        rs_error("encode rtmp packet to bytes failed, ret=%d", ret);
+        return ret;
+    }
+
+    if (size <= 0|| payload == nullptr)
+    {
+        rs_warn("packet is empty, ignore empty message");
+        return ret;
+    }
+
+    MessageHeader header;
+    header.payload_length = size;
+    header.message_type = packet->GetMessageType();
+    header.perfer_cid = packet->GetPreferCID();
+    header.stream_id = stream_id;
+
+    ret = DoSimpleSend(&header, payload, size);
+    rs_freep(payload);
+    if (ret == ERROR_SUCCESS)
+    {
+        ret = OnSendPacket(&header, packet);
+    }
+    return ret;
+}
+
+int Protocol::DoSimpleSend(MessageHeader *header, char *payload, int size)
+{
+    int ret = ERROR_SUCCESS;
+
+    char *p = payload;
+    char *end = payload + size;
+
+    char c0c3[RTMP_FMT0_HEADER_SIZE];
+
+    while (p < end)
+    {
+        int nbh = 0;
+        if (p == payload)
+        {
+            nbh = chunk_header_c0(header->perfer_cid, header->timestamp, header->payload_length,
+                                    header->message_type, header->stream_id, c0c3);
+
+        } else {
+            nbh = chunk_header_c3(header->perfer_cid, header->timestamp, c0c3);
+        }
+
+        iovec iovs[2];
+        iovs[0].iov_base = c0c3;
+        iovs[0].iov_len = nbh;
+
+        int payload_size = rs_min(end - p, out_chunk_size_);
+        iovs[1].iov_base = p;
+        iovs[1].iov_len = nbh;
+        p += payload_size;
+        if (( ret = rw_->WriteEv(iovs, 2, nullptr)) != ERROR_SUCCESS)
+        {
+            if (!IsClientGracefullyClose(ret))
+            {
+                rs_error("send packet with writev failed, ret=%d", ret);
+            }
+            return ret;
+        }
+    }
+    return ret;
+}
+
 int Protocol::DecodeMessage(CommonMessage *msg, Packet **ppacket)
 {
     int ret = ERROR_SUCCESS;
@@ -1252,6 +1489,39 @@ int Protocol::DecodeMessage(CommonMessage *msg, Packet **ppacket)
         return ret;
     }
     *ppacket = packet;
+    return ret;
+}
+
+int Protocol::ManualResponseFlush()
+{
+    int ret = ERROR_SUCCESS;
+    std::vector<Packet *>::iterator it;
+    for (it = manual_response_queue_.begin(); it != manual_response_queue_.end();it++)
+    {
+        Packet *packet = *it;
+        it = manual_response_queue_.erase(it);
+        if ((ret = DoSendAndFreePacket(packet, 0)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+int Protocol::SendAndFreePacket(Packet *packet, int stream_id)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = DoSendAndFreePacket(packet, stream_id)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if ((ret = ManualResponseFlush()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
     return ret;
 }
 
