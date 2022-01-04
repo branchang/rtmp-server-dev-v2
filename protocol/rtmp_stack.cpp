@@ -824,6 +824,45 @@ int SetWindowAckSizePacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
+SetPeerBandwidthPacket::SetPeerBandwidthPacket() : bandwidth_(0),
+                                                   type_((int8_t)PeerBandwidthType::DYNAMIC)
+{
+}
+
+SetPeerBandwidthPacket::~SetPeerBandwidthPacket()
+{
+}
+
+int SetPeerBandwidthPacket::GetPreferCID()
+{
+    return RTMP_CID_PROTOCOL_CONTROL;
+}
+
+int SetPeerBandwidthPacket::GetMessageType()
+{
+    return RTMP_MSG_SET_PERR_BANDWIDTH;
+}
+
+int SetPeerBandwidthPacket::GetSize()
+{
+    return 5;
+}
+
+int SetPeerBandwidthPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    if (!manager->Require(5))
+    {
+        ret = ERROR_SUCCESS;
+        rs_error("encode set_peer_bandwidth_packet failed, ret=%d", ret);
+        return ret;
+    }
+    manager->Write4Bytes(bandwidth_);
+    manager->Write1Bytes(type_);
+
+    return ret;
+}
+
 AckWindowSize::AckWindowSize() : window(0),
                                  sequence_number(0),
                                  recv_bytes(0)
@@ -839,7 +878,10 @@ AckWindowSize::~AckWindowSize()
 
 
 
-Protocol::Protocol(IProtocolReaderWriter *rw): rw_(rw)
+Protocol::Protocol(IProtocolReaderWriter *rw) : rw_(rw),
+                                                in_chunk_size_(RTMP_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE),
+                                                out_chunk_size_(RTMP_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)
+
 {
     in_buffer_ = new FastBuffer;
     cs_cache_ = new ChunkStream *[RTMP_CHUNK_STREAM_CHCAHE];

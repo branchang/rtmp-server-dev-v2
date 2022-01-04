@@ -60,7 +60,7 @@ int32_t RTMPStreamListener::Listen(const std::string &ip, int port)
 int32_t RTMPStreamListener::OnTCPClient(st_netfd_t stfd)
 {
     int32_t ret = ERROR_SUCCESS;
-    if ((ret = server_->AcceptClient(ListenerType::RTMP_STEAM, stfd)) != ERROR_SUCCESS)
+    if ((ret = server_->AcceptClient(ListenerType::RTMP, stfd)) != ERROR_SUCCESS)
     {
         rs_error("accpet client failed, ret= %d", ret);
         return ret;
@@ -124,7 +124,7 @@ int32_t Server::AcceptClient(ListenerType type, st_netfd_t stfd)
     }
 
     Connection *conn = nullptr;
-    if (type == ListenerType::RTMP_STEAM)
+    if (type == ListenerType::RTMP)
     {
         conn = new RTMPConnection(this, stfd);
     }

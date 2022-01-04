@@ -107,3 +107,16 @@ int RTMPServer::SetWindowAckSize(int ackowledgement_window_size)
     }
     return ret;
 }
+
+int RTMPServer::SetPeerBandwidth(int bandwidth)
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::SetPeerBandwidthPacket *pkt = new rtmp::SetPeerBandwidthPacket;
+    pkt->bandwidth_ = bandwidth;
+    if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+    {
+        rs_error("send set_peer_bandwidth packet failed, ret=%d", ret);
+        return ret;
+    }
+    return ret;
+}
