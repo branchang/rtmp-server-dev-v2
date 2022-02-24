@@ -64,7 +64,7 @@ int RTMPServer::ConnectApp(rtmp::Request *req)
 
     rtmp::AMF0Any *p = nullptr;
 
-    if ((p = pkt->command_object->EnsurePropertyString("tcUrl")) != nullptr)
+    if ((p = pkt->command_object->EnsurePropertyString("tcUrl")) == nullptr)
     {
         ret = ERROR_RTMP_REQ_CONNECT;
         rs_error("invalid request, must specifies the tcUrl,ret=%d", ret);

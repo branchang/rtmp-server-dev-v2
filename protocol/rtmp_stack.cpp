@@ -63,9 +63,9 @@ static int chunk_header_c0(int perfer_cid, uint32_t timestamp, int32_t payload_l
     }
 
     pp = (char *)&payload_length;
-    *p++ = p[2];
-    *p++ = p[1];
-    *p++ = p[0];
+    *p++ = pp[2];
+    *p++ = pp[1];
+    *p++ = pp[0];
 
     *p++ = message_type;
 
@@ -540,7 +540,7 @@ int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IP
 
 Request::Request()
 {
-
+    args = nullptr;
 }
 
 Request::~Request()
@@ -585,7 +585,7 @@ int Packet::GetSize()
     return 0;
 }
 
-int Packet::Encode(int &psize, char *&ppayload)
+int Packet::Encode(int &psize, char*& ppayload)
 {
     int ret = ERROR_SUCCESS;
 
@@ -743,7 +743,10 @@ int ConnectAppPacket::Decode(BufferManager *manager)
             rs_freep(p);
         }
         else{
+            rs_freep(args);
             args = p->ToObject();
+            // rs_freep(command_object);
+            // command_object = p->ToObject();
         }
     }
     rs_info("amf0 decode connect request success");
@@ -1074,16 +1077,24 @@ int Protocol::ReadMessageHeader(ChunkStream *cs, char fmt)
         return ret;
     }
 
-    char *ptr = in_buffer_->ReadSlice(mh_size);
+    // char *ptr = in_buffer_->ReadSlice(mh_size);
+    char *ptr;
     BufferManager manager;
-    if ((ret = manager.Initialize(ptr, mh_size)) != ERROR_SUCCESS)
-    {
-        rs_error("initialize buffer manager failed, ret=%d", ret);
-        return ret;
-    }
+    // if ((ret = manager.Initialize(ptr, mh_size)) != ERROR_SUCCESS)
+    // {
+    //     rs_error("initialize buffer manager failed, ret=%d", ret);
+    //     return ret;
+    // }
 
     if (fmt <= RTMP_FMT_TYPE2)
     {
+        ptr = in_buffer_->ReadSlice(mh_size);
+        if ((ret = manager.Initialize(ptr, mh_size)) != ERROR_SUCCESS)
+        {
+            rs_error("initialize buffer manager failed, ret=%d", ret);
+            return ret;
+        }
+
         cs->header.timestamp_delta = manager.Read3Bytes();
         cs->extended_timestamp = (cs->header.timestamp_delta >= RTMP_EXTENDED_TIMESTAMPE);
 
@@ -1198,7 +1209,7 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
 
     int payload_size = cs->header.payload_length - cs->msg->size;
 
-    payload_size = rs_min(cs->header.payload_length, in_chunk_size_);
+    payload_size = rs_min(payload_size, in_chunk_size_);
     rs_verbose("chunk payload size is %d, message_size=%d, recveived_size=%d, in_chunk_size=%d", payload_size, cs->header.payload_length, cs->msg->size, in_chunk_size_);
 
     if (!cs->msg->payload)
@@ -1227,7 +1238,7 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
         //got entire message
         *pmsg = cs->msg;
         cs->msg = nullptr;
-        rs_verbose("got entire rtmp message(type=%d, size=%d, time=%lld, sid=%d", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id);
+        rs_verbose("got entire rtmp message(type=%d, size=%d, time=%lld, sid=%d)", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id);
         return ret;
     }
 
@@ -1311,7 +1322,7 @@ int Protocol::RecvInterlacedMessage(CommonMessage **pmsg)
     }
 
     *pmsg = msg;
-    rs_verbose("get entire message success,size=%d,message(type=%d,size=%d,time=%lld,size=%d)", cs->header.payload_length, cs->header.message_type, cs->msg->size, cs->msg->header.timestamp, cs->header.stream_id);
+    // rs_verbose("get entire message success,size=%d,message(type=%d,size=%d,time=%lld,size=%d)", cs->header.payload_length, cs->header.message_type, cs->msg->size, cs->msg->header.timestamp, cs->header.stream_id);
 
     return ret;
 }
