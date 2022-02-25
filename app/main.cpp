@@ -25,6 +25,11 @@ int32_t RunMaster()
 
 int32_t main(int argc, char *argv[])
 {
+    rs_info("##############################");
+    rs_info("repo_version:%s", REPO_VERSION);
+    rs_info("repo_date:%s", REPO_DATE);
+    rs_info("repo_hash:%s", REPO_HASH);
+    rs_info("##############################");
     RunMaster();
 
     RTMPStreamListener listener(_server, ListenerType::RTMP);

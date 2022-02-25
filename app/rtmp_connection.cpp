@@ -52,7 +52,7 @@ int32_t RTMPConnection::ServiceCycle()
         return ret;
     }
 
-    if ((ret = rtmp_->SetPeerBandwidth((int)RTMP_DEFAULT_PEER_BAND_WIDTH)) != ERROR_SUCCESS)
+    if ((ret = rtmp_->SetPeerBandwidth((int)RTMP_DEFAULT_PEER_BAND_WIDTH, (int)rtmp::PeerBandwidthType::DYNAMIC)) != ERROR_SUCCESS)
     {
         rs_error("set peer bandwidth failed, ret=%d", ret);
         return ret;
