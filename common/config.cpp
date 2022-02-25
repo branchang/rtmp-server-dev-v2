@@ -2,27 +2,33 @@
 #include <common/error.hpp>
 
 
-IConfig::IConfig()
+Config::Config()
 {
 
 }
 
-IConfig::~IConfig()
+Config::~Config()
 {
 
 }
 
-void IConfig::Subscribe(IReloadHandler *handler)
+
+int32_t Config::getChunkSize(const std::string &vhost)
+{
+    return 128;
+}
+
+void Config::Subscribe(IReloadHandler *handler)
 {
 
 }
 
-void IConfig::UnSubScribe(IReloadHandler *handler)
+void Config::UnSubScribe(IReloadHandler *handler)
 {
 
 }
 
-int32_t IConfig::Reload()
+int32_t Config::Reload()
 {
     return ERROR_SUCCESS;
 }
