@@ -241,7 +241,8 @@ AMF0Object *AMF0Any::ToObject()
 
 bool AMF0Any::IsObject()
 {
-    return new AMF0Object;
+    // return new AMF0Object;
+    return marker == RTMP_AMF0_OBJECT;
 }
 
 std::string AMF0Any::ToString()

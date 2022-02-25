@@ -743,10 +743,10 @@ int ConnectAppPacket::Decode(BufferManager *manager)
             rs_freep(p);
         }
         else{
-            rs_freep(args);
-            args = p->ToObject();
-            // rs_freep(command_object);
-            // command_object = p->ToObject();
+            // rs_freep(args);
+            // args = p->ToObject();
+            rs_freep(command_object);
+            command_object = p->ToObject();
         }
     }
     rs_info("amf0 decode connect request success");
@@ -771,7 +771,32 @@ int ConnectAppPacket::GetSize()
 
 int ConnectAppPacket::EncodePacket(BufferManager *manager)
 {
-    return 0;
+    int ret = ERROR_SUCCESS;
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = command_object->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect command_object failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = args->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 encode connect args failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
 }
 
 SetWindowAckSizePacket::SetWindowAckSizePacket() : ackowledgement_window_size(0)
