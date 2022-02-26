@@ -1237,9 +1237,10 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
     payload_size = rs_min(payload_size, in_chunk_size_);
     rs_verbose("chunk payload size is %d, message_size=%d, recveived_size=%d, in_chunk_size=%d", payload_size, cs->header.payload_length, cs->msg->size, in_chunk_size_);
 
+    // 初始化payload数据存储区域
     if (!cs->msg->payload)
     {
-        cs->msg->CreatePlayload(payload_size);
+        cs->msg->CreatePlayload(cs->header.payload_length);
     }
 
     if ((ret = in_buffer_->Grow(rw_, payload_size)) != ERROR_SUCCESS)
@@ -1251,7 +1252,7 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
         }
         return ret;
     }
-
+    // 按照偏移量进行读取
     memcpy(cs->msg->payload + cs->msg->size, in_buffer_->ReadSlice(payload_size), payload_size);
     cs->msg->size += payload_size;
 
@@ -1444,7 +1445,8 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
         if (command == RTMP_AMF0_COMMAND_CONNECT)
         {
             rs_verbose("decode amf0 command message(connect)");
-            *ppacket = packet = new ConnectAppPacket;
+            // 解析connect请求的数据包
+            *ppacket = packet = new ConnectAppPacket();
             return packet->Decode(manager);
         }
     }

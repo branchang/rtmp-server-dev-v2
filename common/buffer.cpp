@@ -65,6 +65,7 @@ bool BufferManager::Empty()
 bool BufferManager::Require(int32_t required_size)
 {
     rs_assert(required_size >= 0);
+    // rs_info("required size %d, %d, %d, %d", required_size, size_, ptr_ - buf_);
     return required_size <= size_ - (ptr_ - buf_);
 }
 
@@ -101,6 +102,7 @@ int32_t BufferManager::Read3Bytes()
     pp[2] = *ptr_++;
     pp[1] = *ptr_++;
     pp[0] = *ptr_++;
+    // rs_warn("Read3Bytes, %x, %x, %x", pp[2], pp[1], pp[0]);
 
     return value;
 }
@@ -122,7 +124,7 @@ int32_t BufferManager::Read4Bytes()
 int64_t BufferManager::Read8Bytes()
 {
     rs_assert(Require(8));
-    int32_t value;
+    int64_t value;
     char *pp = (char *)&value;
 
     pp[7] = *ptr_++;
@@ -143,6 +145,7 @@ std::string BufferManager::ReadString(int32_t len)
     std::string value;
     value.append(ptr_, len);
 
+    // rs_info("POS:%d, %d, %d", Pos(), ptr_[0], (ptr_+len)[0]);
     ptr_ += len;
     return value;
 }

@@ -12,6 +12,9 @@ static bool amf0_is_object_eof(BufferManager *manager)
     if (manager->Require(3))
     {
         int32_t flag = manager->Read3Bytes();
+        // DEBUG调试
+        // int32_t buf_size = manager->Size();
+        // rs_info("amf0_is_object_eof:%x, %d, %d", flag, buf_size, manager->Data()[buf_size-1]);
         manager->Skip(-3);
         return RTMP_AMF0_OBJECT_END == flag;
     }
@@ -63,7 +66,7 @@ static int amf0_read_utf8(BufferManager *manager, std::string &value)
         return ret;
     }
 
-    int64_t len = manager->Read2Bytes();
+    int16_t len = manager->Read2Bytes();
     rs_verbose("amf0 read string length success,len=%d", len);
 
     if (len <= 0)
@@ -1154,7 +1157,7 @@ int AMF0Any::Discovery(BufferManager *manager, AMF0Any **ppvalue)
 
     char marker = manager->Read1Bytes();
 
-    rs_verbose("amf0 read any marker failed,ret=%#x", marker);
+    rs_verbose("amf0 read any marker success,ret=%#x", marker);
 
     manager->Skip(-1);
 
