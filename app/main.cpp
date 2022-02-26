@@ -5,6 +5,7 @@
 #include <common/st.hpp>
 #include <common/core.hpp>
 #include <common/error.hpp>
+#include <common/config.hpp>
 #include <app/server.hpp>
 #include <common/listener.hpp>
 
@@ -12,6 +13,7 @@
 ILog *_log = new FastLog;
 IThreadContext *_context = new ThreadContext;
 Server *_server = new Server();
+Config *_config = new Config();
 
 int32_t RunMaster()
 {

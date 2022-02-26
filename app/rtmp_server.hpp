@@ -17,6 +17,7 @@ public:
     virtual int ConnectApp(rtmp::Request *req);
     virtual int SetWindowAckSize(int ackowledgement_window_size);
     virtual int SetPeerBandwidth(int bandwidth, int type);
+    virtual int SetChunkSize(int chunk_size);
 
 private:
     IProtocolReaderWriter *rw_;

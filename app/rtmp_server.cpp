@@ -121,3 +121,17 @@ int RTMPServer::SetPeerBandwidth(int bandwidth, int type)
     }
     return ret;
 }
+
+int RTMPServer::SetChunkSize(int chunk_size)
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::SetChunkSizePacket *pkt = new rtmp::SetChunkSizePacket();
+    pkt->chunk_size = chunk_size;
+    if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+    {
+        rs_error("send set_chunk_size packet failed, ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}

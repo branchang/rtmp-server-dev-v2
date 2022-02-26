@@ -2,6 +2,7 @@
 #include <protocol/rtmp_stack.hpp>
 #include <protocol/rtmp_consts.hpp>
 #include <common/error.hpp>
+#include <common/config.hpp>
 #include <common/log.hpp>
 
 RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd): Connection(server, stfd)
@@ -55,6 +56,13 @@ int32_t RTMPConnection::ServiceCycle()
     if ((ret = rtmp_->SetPeerBandwidth((int)RTMP_DEFAULT_PEER_BAND_WIDTH, (int)rtmp::PeerBandwidthType::DYNAMIC)) != ERROR_SUCCESS)
     {
         rs_error("set peer bandwidth failed, ret=%d", ret);
+        return ret;
+    }
+
+    int chunk_size = _config->getChunkSize(request_->vhost);
+    if ((ret = rtmp_->SetChunkSize(chunk_size)) != ERROR_SUCCESS)
+    {
+        rs_error("set chunk size failed, ret=%d", ret);
         return ret;
     }
 
