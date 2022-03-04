@@ -47,7 +47,8 @@ int32_t RTMPConnection::DoCycle()
 int32_t RTMPConnection::ServiceCycle()
 {
     int ret = ERROR_SUCCESS;
-    if ((ret = rtmp_->SetWindowAckSize((int)RTMP_DEFAULT_WINDOW_ACK_SIZE)))
+
+    if ((ret = rtmp_->SetWindowAckSize((int)RTMP_DEFAULT_WINDOW_ACK_SIZE)) != ERROR_SUCCESS)
     {
         rs_error("set window ackowledgement size failed,ret=%d", ret);
         return ret;

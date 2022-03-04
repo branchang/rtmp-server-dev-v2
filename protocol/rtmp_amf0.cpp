@@ -701,7 +701,7 @@ int AMF0EcmaArray::Write(BufferManager *manager)
             return ret;
         }
 
-        if ((ret = AMF0ReadAny(manager, &property_value)) != ERROR_SUCCESS)
+        if ((ret = AMF0WriteAny(manager, property_value)) != ERROR_SUCCESS)
         {
             rs_error("amf0 write ecma array property value failed,ret=%d", ret);
             return ret;
@@ -1108,6 +1108,7 @@ AMF0Any *AMF0Object::ValueAt(int index)
 
 int AMF0Object::Write(BufferManager *manager)
 {
+    
     return 0;
 }
 

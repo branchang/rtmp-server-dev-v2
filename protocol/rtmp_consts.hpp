@@ -59,6 +59,7 @@
 
 // amf0 command message
 #define RTMP_AMF0_COMMAND_CONNECT "connect"
+#define RTMP_AMF0_COMMAND_RESULT "_result"
 
 //amf0 marker
 #define RTMP_AMF0_NUMBER 0x00

@@ -225,6 +225,30 @@ public:
     AMF0Object *command_object;
 };
 
+class ConnectAppResPacket : public Packet
+{
+public:
+    ConnectAppResPacket();
+    ~ConnectAppResPacket();
+
+public:
+    //Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    // Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Object *props;
+    AMF0Object *info;
+};
+
 class SetWindowAckSizePacket : public Packet
 {
 public:
