@@ -1108,8 +1108,43 @@ AMF0Any *AMF0Object::ValueAt(int index)
 
 int AMF0Object::Write(BufferManager *manager)
 {
-    
-    return 0;
+    int ret = ERROR_SUCCESS;
+    if (!manager->Require(1))
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode object marker failed,ret=%d", ret);
+        return ret;
+    }
+    manager->Write1Bytes(RTMP_AMF0_OBJECT);
+    for (int i = 0;i < Count(); i++)
+    {
+        std::string property_name = KeyAt(i);
+        AMF0Any *property_value = ValueAt(i);
+
+        if ((ret = amf0_write_utf8(manager, property_name)) != ERROR_SUCCESS)
+        {
+            ret = ERROR_RTMP_AMF0_ENCODE;
+            rs_error("amf0 encode object property_name failed, ret=%d", ret);
+            return ret;
+        }
+        if ((ret = property_value->Write(manager)) != ERROR_SUCCESS)
+        {
+            ret = ERROR_RTMP_AMF0_ENCODE;
+            rs_error("amf0 encode object property_value failed, ret=%d", ret);
+            return ret;
+        }
+
+    }
+
+    AMF0ObjectEOF eof;
+    if ((ret = eof.Write(manager)) != ERROR_SUCCESS)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 encode object eof failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
 }
 
 
