@@ -290,8 +290,8 @@ protected:
     virtual int GetSize() override;
     virtual int EncodePacket(BufferManager *manager) override;
 public:
-    int32_t bandwidth_;
-    int8_t type_;
+    int32_t bandwidth;
+    int8_t type;
 };
 
 

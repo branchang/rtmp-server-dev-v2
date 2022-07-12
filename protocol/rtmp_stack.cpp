@@ -983,8 +983,8 @@ int SetWindowAckSizePacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
-SetPeerBandwidthPacket::SetPeerBandwidthPacket() : bandwidth_(0),
-                                                   type_((int8_t)PeerBandwidthType::DYNAMIC)
+SetPeerBandwidthPacket::SetPeerBandwidthPacket() : bandwidth(0),
+                                                   type((int8_t)PeerBandwidthType::DYNAMIC)
 {
 }
 
@@ -1016,8 +1016,8 @@ int SetPeerBandwidthPacket::EncodePacket(BufferManager *manager)
         rs_error("encode set_peer_bandwidth_packet failed, ret=%d", ret);
         return ret;
     }
-    manager->Write4Bytes(bandwidth_);
-    manager->Write1Bytes(type_);
+    manager->Write4Bytes(bandwidth);
+    manager->Write1Bytes(type);
 
     return ret;
 }
