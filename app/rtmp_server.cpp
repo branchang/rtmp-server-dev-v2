@@ -135,3 +135,30 @@ int RTMPServer::SetChunkSize(int chunk_size)
 
     return ret;
 }
+
+int RTMPServer::ResponseConnectApp(rtmp::Request *req, const std::string &local_ip)
+{
+    int ret = ERROR_SUCCESS;
+
+    rtmp::ConnectAppResPacket *pkt = new rtmp::ConnectAppResPacket();
+    pkt->props->Set("fmsVer", rtmp::AMF0Any::String("FMS/3,5,3,888"));
+    pkt->props->Set("capabilities", rtmp::AMF0Any::Number(127));
+    pkt->props->Set("mode", rtmp::AMF0Any::Number(1));
+    pkt->props->Set("level", rtmp::AMF0Any::String("status"));
+    pkt->props->Set("code", rtmp::AMF0Any::String("NetConnection.Connect.Success"));
+    pkt->props->Set("description", rtmp::AMF0Any::String("Connection success zhr"));
+    pkt->props->Set("objectEncoding", rtmp::AMF0Any::Number(req->object_encoding));
+
+    rtmp::AMF0EcmaArray *ecma_array = rtmp::AMF0Any::EcmaArray();
+    pkt->props->Set("data", ecma_array);
+
+    ecma_array->Set("version", rtmp::AMF0Any::String("3,5,3,888"));
+
+    if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+    {
+        rs_error("send connect app response message failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
