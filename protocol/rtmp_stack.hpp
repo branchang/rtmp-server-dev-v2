@@ -81,6 +81,13 @@ public:
     void InitializeAudio(int32_t size, uint32_t time, int32_t stream);
 };
 
+enum class ConnType
+{
+    UNKNOW = 0,
+    PLAY = 1,
+    FMLE_PUBLISH = 2,
+};
+
 class CommonMessage
 {
 public:

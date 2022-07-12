@@ -162,3 +162,41 @@ int RTMPServer::ResponseConnectApp(rtmp::Request *req, const std::string &local_
 
     return ret;
 }
+
+int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration)
+{
+    int ret = ERROR_SUCCESS;
+    type = rtmp::ConnType::UNKNOW;
+
+    while (true)
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS)
+        {
+            if(!IsClientGracefullyClose(ret))
+            {
+
+            }
+            return ret;
+        }
+
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rtmp::MessageHeader &h = msg->header;
+
+        if(!h.IsAMF0Command() && !h.IsAMF3Command())
+        {
+            continue;
+        }
+
+        rtmp::Packet *packet = nullptr;
+        if ((ret = protocol_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+        {
+            rs_error("identify decode message failed, ret=%d", ret);
+        }
+
+        rs_auto_free(rtmp::Packet, packet);
+    }
+
+    return ret;
+
+}
