@@ -61,6 +61,11 @@
 #define RTMP_AMF0_COMMAND_CONNECT "connect"
 #define RTMP_AMF0_COMMAND_RESULT "_result"
 
+#define RTMP_AMF0_COMMAND_RELEASE_STREAM "releaseStream"
+#define RTMP_AMF0_COMMAND_FC_PUBLISH "FCPublish"
+#define RTMP_AMF0_COMMAND_UNPUBLISH "FCUnpublish"
+#define RTMP_AMF0_COMMAND_PUBLISH "publish"
+
 //amf0 marker
 #define RTMP_AMF0_NUMBER 0x00
 #define RTMP_AMF0_BOOLEAN 0x01
