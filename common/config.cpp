@@ -33,3 +33,8 @@ int32_t Config::Reload()
     return ERROR_SUCCESS;
 }
 
+bool Config::GetATC(const std::string &vhost)
+{
+    return false;
+}
+

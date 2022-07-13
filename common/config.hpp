@@ -15,6 +15,7 @@ public:
     virtual int32_t Reload();
 
     virtual int32_t getChunkSize(const std::string &vhost);
+    virtual bool GetATC(const std::string &vhost);
 
 };
 
