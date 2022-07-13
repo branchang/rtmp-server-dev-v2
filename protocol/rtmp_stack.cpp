@@ -104,6 +104,20 @@ static int chunk_header_c3(int perfer_cid, uint32_t timestamp, char *buf)
     return p - buf;
 }
 
+static std::string generate_stream_url(const std::string &vhost, const std::string &app, const std::string &stream)
+{
+    std::string retstr = "";
+    if (vhost != RTMP_DEFAULT_VHOST)
+    {
+        retstr = vhost;
+    }
+    retstr += "/";
+    retstr += "app";
+    retstr += "/";
+    retstr += "stream";
+    return retstr;
+}
+
 extern void DiscoveryTcUrl(const std::string &tc_url,
                             std::string &schema,
                             std::string &host,
@@ -538,9 +552,10 @@ int32_t SimpleHandshake::HandshakeWithClient(HandshakeBytes *handshake_bytes, IP
     return ret;
 }
 
-Request::Request()
+Request::Request() : object_encoding(3),
+                     duration(-1),
+                     args(nullptr)
 {
-    args = nullptr;
 }
 
 Request::~Request()
@@ -559,6 +574,50 @@ void Request::Strip()
 
     // app = Utils::StringTrimStart(app, "/");
     // stream = Utils::StringTrimStart(stream, "/");
+}
+
+Request *Request::Copy()
+{
+    Request *cp = new Request();
+    cp->ip = ip;
+    cp->app = app;
+    cp->object_encoding = object_encoding;
+    cp->host = host;
+    cp->port = port;
+    cp->param = param;
+    cp->schema = schema;
+    cp->swf_url = swf_url;
+    cp->tc_url = tc_url;
+    cp->vhost = vhost;
+    cp->duration = duration;
+    if (args)
+    {
+        cp->args = args->Copy()->ToObject();
+    }
+
+    return cp;
+}
+
+std::string Request::GetStreamUrl()
+{
+    return generate_stream_url(vhost, app, stream);
+}
+
+void Request::Update(Request *req)
+{
+    page_url = req->page_url;
+    swf_url = req->swf_url;
+    tc_url = req->tc_url;
+    param = req->param;
+
+    if (args)
+    {
+        rs_freep(args);
+    }
+    if (req->args)
+    {
+        args = req->args->Copy()->ToObject();
+    }
 }
 
 Packet::Packet()
