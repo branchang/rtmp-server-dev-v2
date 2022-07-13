@@ -87,7 +87,14 @@ int RTMPServer::ConnectApp(rtmp::Request *req)
         rs_freep(req->args);
         req->args = pkt->args->Copy()->ToObject();
     }
-    rtmp::DiscoveryTcUrl(req->tc_url, req->schema, req->host, req->vhost, req->app, req->stream, req->port, req->param);
+    rtmp::DiscoveryTcUrl(req->tc_url,
+                         req->schema,
+                         req->host,
+                         req->vhost,
+                         req->app,
+                         req->stream,
+                         req->port,
+                         req->param);
 
     req->Strip();
 
@@ -112,8 +119,8 @@ int RTMPServer::SetPeerBandwidth(int bandwidth, int type)
 {
     int ret = ERROR_SUCCESS;
     rtmp::SetPeerBandwidthPacket *pkt = new rtmp::SetPeerBandwidthPacket;
-    pkt->bandwidth_ = bandwidth;
-    pkt->type_ = type;
+    pkt->bandwidth = bandwidth;
+    pkt->type = type;
     if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
     {
         rs_error("send set_peer_bandwidth packet failed, ret=%d", ret);
@@ -163,6 +170,23 @@ int RTMPServer::ResponseConnectApp(rtmp::Request *req, const std::string &local_
     return ret;
 }
 
+int RTMPServer::IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string stream_id)
+{
+    int ret = ERROR_SUCCESS;
+    type = rtmp::ConnType::FMLE_PUBLISH;
+    // stream_name = pkt->stream_name;
+
+    rtmp::FMLEStartResPacket *res_pkt = new rtmp::FMLEStartResPacket(pkt->transaction_id);
+    if ((ret = protocol_->SendAndFreePacket(res_pkt, 0)) != ERROR_SUCCESS)
+    {
+        rs_error("send release stream response failed, ret=%d", ret);
+        return ret;
+    }
+
+    rs_verbose("send release stream response message success");
+    return ret;
+}
+
 int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration)
 {
     int ret = ERROR_SUCCESS;
@@ -195,6 +219,13 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
         }
 
         rs_auto_free(rtmp::Packet, packet);
+
+        rs_info("###################################");
+        if (dynamic_cast<rtmp::FMLEStartPacket *>(packet))
+        {
+            rs_info("identify client by release Stream, fmle publish");
+            return IdentiyFmlePublishClient(dynamic_cast<rtmp::FMLEStartPacket *>(packet), type, stream_name);
+        }
     }
 
     return ret;

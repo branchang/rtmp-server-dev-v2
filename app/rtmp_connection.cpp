@@ -44,6 +44,48 @@ int32_t RTMPConnection::DoCycle()
     return ret;
 }
 
+int32_t RTMPConnection::StreamServiceCycle()
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::ConnType type;
+    if ((ret = rtmp_->IdentifyClient(1, type, request_->stream, request_->duration)) != ERROR_SUCCESS)
+    {
+        rs_error("identify client failed,ret=%d", ret);
+        return ret;
+    }
+
+    rtmp::DiscoveryTcUrl(request_->tc_url,
+                         request_->schema,
+                         request_->host,
+                         request_->vhost,
+                         request_->app,
+                         request_->stream,
+                         request_->port,
+                         request_->param);
+    request_->Strip();
+
+    if (request_->schema.empty() || request_->vhost.empty() || request_->port.empty() || request_->app.empty())
+    {
+        ret = ERROR_RTMP_REQ_TCURL;
+        rs_error("discovery tcUrl failed,tcUrl=%s,schema=%s,vhost=%s,port=%s,app=%s,ret=%d",
+                 request_->tc_url.c_str(),
+                 request_->schema.c_str(),
+                 request_->vhost.c_str(),
+                 request_->port.c_str(),
+                 request_->app.c_str(),
+                 ret);
+        return ret;
+    }
+
+    if (request_->stream.empty())
+    {
+        ret= ERROR_RTMP_STREAM_NAME_EMPTY;
+        rs_error("rtmp:empty stream name is not allowed,ret=%d",ret);
+        return ret;
+    }
+    return ret;
+}
+
 int32_t RTMPConnection::ServiceCycle()
 {
     int ret = ERROR_SUCCESS;
@@ -60,11 +102,28 @@ int32_t RTMPConnection::ServiceCycle()
         return ret;
     }
 
+    std::string local_ip = Utils::GetLocalIp(st_netfd_fileno(client_stfd_));
+
     int chunk_size = _config->getChunkSize(request_->vhost);
     if ((ret = rtmp_->SetChunkSize(chunk_size)) != ERROR_SUCCESS)
     {
         rs_error("set chunk size failed, ret=%d", ret);
         return ret;
+    }
+
+    if ((ret = rtmp_->ResponseConnectApp(request_, local_ip)) != ERROR_SUCCESS)
+    {
+        rs_error("response connect app failed, ret=%d", ret);
+        return ret;
+    }
+
+    while (!disposed_)
+    {
+        ret = StreamServiceCycle();
+        if (ret == ERROR_SUCCESS)
+        {
+            continue;
+        }
     }
 
     return ret;
