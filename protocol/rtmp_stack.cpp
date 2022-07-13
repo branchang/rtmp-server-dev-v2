@@ -954,6 +954,7 @@ int ConnectAppResPacket::GetSize()
     size += AMF0_LEN_NUMBER;
     size += AMF0_LEN_OBJECT(props);
     size += AMF0_LEN_OBJECT(info);
+    return size;
 }
 
 int ConnectAppResPacket::EncodePacket(BufferManager* manager)

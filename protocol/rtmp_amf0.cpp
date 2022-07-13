@@ -603,7 +603,7 @@ void AMF0EcmaArray::Clear()
 int AMF0EcmaArray::Read(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
-    if ((ret = manager->Require(1)) != ERROR_SUCCESS)
+    if (!manager->Require(1))
     {
         ret = ERROR_RTMP_AMF0_DECODE;
         rs_error("amf0 read ecma array marker failed, ret=%d", ret);
@@ -620,7 +620,7 @@ int AMF0EcmaArray::Read(BufferManager *manager)
 
     rs_verbose("amf0 read ecma array marker success");
 
-    if ((ret = manager->Require(4)) != ERROR_SUCCESS)
+    if (!manager->Require(4))
     {
         ret = ERROR_RTMP_AMF0_DECODE;
         rs_error("amf0 read ecma array count failed, ret=%d", ret);
@@ -670,7 +670,7 @@ int AMF0EcmaArray::Write(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
 
-    if ((manager->Require(1)) != ERROR_SUCCESS)
+    if (!manager->Require(1))
     {
         ret = ERROR_RTMP_AMF0_ENCODE;
         rs_error("amf0 write ecma array marker failed, ret=%d", ret);
@@ -680,7 +680,7 @@ int AMF0EcmaArray::Write(BufferManager *manager)
     manager->Write1Bytes(RTMP_AMF0_ECMA_ARRAY);
     rs_verbose("amf0 write ecma array marker success");
 
-    if ((manager->Require(4)) != ERROR_SUCCESS)
+    if (!manager->Require(4))
     {
         ret = ERROR_RTMP_AMF0_ENCODE;
         rs_error("amf0 write ecma array count failed, ret=%d", ret);
