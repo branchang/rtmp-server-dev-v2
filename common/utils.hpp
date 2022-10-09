@@ -44,6 +44,9 @@ public:
     static std::string StringTrimStart(const std::string &str, const std::string &trim_chars);
     static std::string StringTrimEnd(const std::string &str, const std::string &trim_chars);
     static std::string StringRemove(const std::string &str, const std::string &remove_chars);
+    static int64_t GetSteadyNanoSeconds();
+    static int64_t GetSteadyMicroSeconds();
+    static int64_t GetSteadyMilliSeconds();
 
 };
 

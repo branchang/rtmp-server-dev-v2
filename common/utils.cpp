@@ -2,6 +2,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
+#include <chrono>
 
 
 std::string Utils::GetPeerIp(int32_t fd)
@@ -171,4 +172,26 @@ std::string Utils::StringRemove(const std::string &str, const std::string &remov
         }
     }
     return retstr;
+}
+
+
+int64_t Utils::GetSteadyNanoSeconds()
+{
+    using namespace std::chrono;
+    steady_clock::time_point now = steady_clock::now();
+    return duration_cast<nanoseconds>(now.time_since_epoch()).count();
+}
+
+int64_t Utils::GetSteadyMicroSeconds()
+{
+    using namespace std::chrono;
+    steady_clock::time_point now = steady_clock::now();
+    return duration_cast<microseconds>(now.time_since_epoch()).count();
+}
+
+int64_t Utils::GetSteadyMilliSeconds()
+{
+    using namespace std::chrono;
+    steady_clock::time_point now = steady_clock::now();
+    return duration_cast<milliseconds>(now.time_since_epoch()).count();
 }

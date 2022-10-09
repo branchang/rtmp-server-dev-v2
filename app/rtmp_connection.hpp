@@ -14,7 +14,7 @@ public:
     RTMPConnection(Server *server, st_netfd_t stfd);
     virtual ~RTMPConnection();
 public:
-    virtual void Reasample() override;
+    virtual void Resample() override;
     virtual int64_t GetSendBytesDelta() override;
     virtual int64_t GetRecvBytesDelta() override;
     virtual void CleanUp() override;

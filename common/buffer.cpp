@@ -4,7 +4,7 @@
 #include <common/utils.hpp>
 
 // default recv buffer size 128kb
-#define RS_DEFAULT_RECV_BUFFER_SIZE 13107
+#define RS_DEFAULT_RECV_BUFFER_SIZE 131072
 // socket max buffer size 256kb
 #define RS_MAX_SOCKET_BUFFER_SIZE 262144
 

@@ -129,7 +129,7 @@ int32_t RTMPConnection::ServiceCycle()
     return ret;
 }
 
-void RTMPConnection::Reasample()
+void RTMPConnection::Resample()
 {
 
 }
