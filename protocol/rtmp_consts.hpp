@@ -66,6 +66,9 @@
 #define RTMP_AMF0_COMMAND_FC_PUBLISH "FCPublish"
 #define RTMP_AMF0_COMMAND_UNPUBLISH "FCUnpublish"
 #define RTMP_AMF0_COMMAND_PUBLISH "publish"
+#define RTMP_AMF0_COMMAND_CREATE_STREAM "createStream"
+#define RTMP_AMF0_COMMAND_ON_STATUS "onStatus"
+
 
 //amf0 marker
 #define RTMP_AMF0_NUMBER 0x00

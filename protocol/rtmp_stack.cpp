@@ -1300,6 +1300,75 @@ int FMLEStartResPacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
+CreateStreamPacket::CreateStreamPacket() : command_name(RTMP_AMF0_COMMAND_CREATE_STREAM),
+                                           transaction_id(0)
+{
+    command_object = AMF0Any::Null();
+}
+
+CreateStreamPacket::~CreateStreamPacket()
+{
+    rs_freep(command_object);
+}
+
+int CreateStreamPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+
+int CreateStreamPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+
+int CreateStreamPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0ReadString(manager, command_name)))
+    {
+        rs_error("amf0 decode createStream command_name failed, ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_CREATE_STREAM)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("amf0 decode createStream command_name failed, ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode createStream transaction_id failed, ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode createStream null failed, ret=%d", ret);
+        return ret;
+    }
+    return ret;
+
+}
+
+int CreateStreamPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    return size;
+}
+
+int CreateStreamPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+
 AckWindowSize::AckWindowSize() : window(0),
                                  sequence_number(0),
                                  recv_bytes(0)
