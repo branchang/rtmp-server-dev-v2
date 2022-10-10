@@ -176,6 +176,12 @@ public:
     AMF0Object *args;
 };
 
+class Response
+{
+public:
+    int stream_id = 1;
+};
+
 class Packet
 {
 public:
