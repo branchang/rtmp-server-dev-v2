@@ -1368,6 +1368,76 @@ int CreateStreamPacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
+CreateStreamResPacket::CreateStreamResPacket(double trans_id, int sid) : command_name(RTMP_AMF0_COMMAND_RESULT),
+                                                                         transaction_id(trans_id),
+                                                                         stream_id(sid)
+{
+    command_object = AMF0Any::Null();
+}
+
+CreateStreamResPacket::~CreateStreamResPacket()
+{
+    rs_freep(command_object);
+}
+
+int CreateStreamResPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+
+int CreateStreamResPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+
+int CreateStreamResPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+int CreateStreamResPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_NUMBER;
+    return size;
+}
+
+int CreateStreamResPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0WriteString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream reponse packet command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream reponse packet transaction_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNull(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream reponse packet null failed,ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0WriteNumber(manager, stream_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 write createStream reponse packet stream_id failed,ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+
+}
+
 
 AckWindowSize::AckWindowSize() : window(0),
                                  sequence_number(0),

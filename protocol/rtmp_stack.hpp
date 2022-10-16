@@ -373,6 +373,30 @@ public:
     AMF0Any *command_object;
 };
 
+class CreateStreamResPacket : public Packet
+{
+public:
+    CreateStreamResPacket(double trans_id, int sid);
+    virtual ~CreateStreamResPacket();
+
+public:
+    // Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    // Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *command_object;
+    double stream_id;
+
+};
 
 class AckWindowSize
 {
