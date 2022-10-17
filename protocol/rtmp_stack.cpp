@@ -2149,12 +2149,25 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
             // 解析connect请求的数据包
             *ppacket = packet = new ConnectAppPacket();
             return packet->Decode(manager);
-        }else if (command == RTMP_AMF0_COMMAND_RELEASE_STREAM)
+        }else if (command == RTMP_AMF0_COMMAND_RELEASE_STREAM ||
+                  command == RTMP_AMF0_COMMAND_FC_PUBLISH ||
+                  command == RTMP_AMF0_COMMAND_UNPUBLISH)
         {
             rs_verbose("decode amf0 command message(releaseStream)");
             *ppacket = packet = new FMLEStartPacket;
             return packet->Decode(manager);
+        }else if (command == RTMP_AMF0_COMMAND_CREATE_STREAM)
+        {
+            rs_verbose("decode amf0 command message(createStream)");
+            *ppacket = packet = new CreateStreamPacket;
+            return packet->Decode(manager);
+        }else if (command == RTMP_AMF0_COMMAND_PUBLISH)
+        {
+            rs_verbose("decode amf0 command message()");
+            *ppacket = packet = new PublishPacket;
+            return packet->Decode(manager);
         }
+
     }
     else if (header.IsSetChunkSize())
     {
