@@ -1438,6 +1438,88 @@ int CreateStreamResPacket::EncodePacket(BufferManager *manager)
 
 }
 
+PublishPacket::PublishPacket() : command_name(RTMP_AMF0_COMMAND_PUBLISH),
+                                 transaction_id(0),
+                                 type("live")
+{
+    command_object = AMF0Any::Null();
+}
+
+PublishPacket::~PublishPacket()
+{
+    rs_freep(command_object);
+}
+
+int PublishPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+
+int PublishPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+
+int PublishPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message command_name failed,ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_PUBLISH)
+    {
+        ret = ERROR_RTMP_AMF0_ENCODE;
+        rs_error("amf0 decode publish message command_name failed, ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message transaction_id failed, ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message null failed, ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadString(manager, stream_name)) !=ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message stream_name failed, ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadString(manager, type)) != ERROR_SUCCESS)
+    {
+        rs_error("amf0 decode publish message type failed, ret=%d", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+int PublishPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_STR(stream_name);
+    size += AMF0_LEN_STR(type);
+    return size;
+}
+
+int PublishPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
 
 AckWindowSize::AckWindowSize() : window(0),
                                  sequence_number(0),

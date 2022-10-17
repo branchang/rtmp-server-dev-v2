@@ -398,6 +398,30 @@ public:
 
 };
 
+class PublishPacket : public Packet
+{
+public:
+    PublishPacket();
+    virtual ~PublishPacket();
+
+public:
+    // Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    // Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *command_object;
+    std::string stream_name;
+    std::string type;
+};
+
 class AckWindowSize
 {
 public:
