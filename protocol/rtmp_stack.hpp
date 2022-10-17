@@ -422,6 +422,31 @@ public:
     std::string type;
 };
 
+class OnStatusCallPacket : public Packet
+{
+public:
+    OnStatusCallPacket();
+    virtual ~OnStatusCallPacket();
+
+public:
+    // Packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    // Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    double transaction_id;
+    AMF0Any *args;
+    AMF0Object *data;
+
+};
+
 class AckWindowSize
 {
 public:
