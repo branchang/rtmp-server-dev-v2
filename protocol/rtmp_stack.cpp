@@ -337,6 +337,141 @@ ChunkStream::~ChunkStream()
 }
 
 
+SharedPrtMesage::SharedPrtMesage() : ptr_(nullptr)
+{
+
+}
+
+SharedPrtMesage::~SharedPrtMesage()
+{
+    if(ptr_)
+    {
+        if (ptr_->shared_count == 0)
+        {
+            rs_freep(ptr_);
+        }
+        else
+        {
+            ptr_->shared_count--;
+        }
+    }
+}
+
+SharedPrtMesage::SharedPrtPayload::SharedPrtPayload() : payload(nullptr),
+                                                        size(0),
+                                                        shared_count(0)
+{
+
+}
+
+SharedPrtMesage::SharedPrtPayload::~SharedPrtPayload()
+{
+    rs_freep(payload);
+}
+
+int SharedPrtMesage::Create(MessageHeader *pheader, char *payload, int )
+{
+    int ret = ERROR_SUCCESS;
+
+    if (ptr_)
+    {
+        ret = ERROR_SYSTEM_ASSERT_FAILED;
+        rs_error("couldn't set payload twice, ret=%d", ret);
+        rs_assert(false);
+    }
+    ptr_ = new SharedPrtPayload;
+    if (pheader)
+    {
+        ptr_->header.message_type = pheader->message_type;
+        ptr_->header.payload_length = pheader->payload_length;
+        ptr_->header.perfer_cid = pheader->perfer_cid;
+        timestamp = pheader->timestamp;
+        stream_id = pheader->stream_id;
+    }
+    ptr_->payload = payload;
+    size = ptr_->size;
+
+    return ret;
+}
+
+int SharedPrtMesage::Create(CommonMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = Create(&msg->header, msg->payload, msg->size)))
+    {
+        return ret;
+    }
+    msg->payload = nullptr;
+    msg->size = 0;
+
+    return ret;
+}
+
+int SharedPrtMesage::Count()
+{
+    return ptr_->shared_count;
+}
+
+bool SharedPrtMesage::Check(int stream_id)
+{
+    if (ptr_->header.perfer_cid < 2 || ptr_->header.perfer_cid > 63)
+    {
+        rs_info("change the chunk_id=%d to default=%d", ptr_->header.perfer_cid, RTMP_CID_PROTOCOL_CONTROL);
+        ptr_->header.perfer_cid = RTMP_CID_PROTOCOL_CONTROL;
+    }
+    if (this->stream_id == stream_id)
+    {
+        return true;
+    }
+
+    this->stream_id = stream_id;
+
+    return false;
+}
+
+bool SharedPrtMesage::IsAV()
+{
+    return ptr_->header.message_type == RTMP_MSG_AUDIO_MESSAGE ||
+           ptr_->header.message_type == RTMP_MSG_VIDEO_MESSAGE;
+}
+
+bool SharedPrtMesage::IsAudio()
+{
+    return ptr_->header.message_type == RTMP_MSG_AUDIO_MESSAGE;
+}
+
+bool SharedPrtMesage::IsVideo()
+{
+    return ptr_->header.message_type == RTMP_MSG_VIDEO_MESSAGE;
+}
+
+int SharedPrtMesage::ChunkHeader(char *buf, bool c0)
+{
+    if (c0)
+    {
+        return chunk_header_c0(ptr_->header.perfer_cid, timestamp, ptr_->header.payload_length, ptr_->header.message_type, stream_id, buf);
+    }
+    else
+    {
+        return chunk_header_c3(ptr_->header.perfer_cid, timestamp, buf);
+
+    }
+}
+
+SharedPrtMesage *SharedPrtMesage::Copy()
+{
+    SharedPrtMesage *copy = new SharedPrtMesage;
+    copy->ptr_ = ptr_;
+    ptr_->shared_count++;
+
+    copy->timestamp = timestamp;
+    copy->stream_id = stream_id;
+    copy->payload = ptr_->payload;
+    copy->size = ptr_->size;
+    return copy;
+}
+
 HandshakeBytes::HandshakeBytes(): c0c1(nullptr),
                                   s0s1s2(nullptr),
                                    c2(nullptr)
