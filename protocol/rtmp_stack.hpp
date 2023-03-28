@@ -41,7 +41,7 @@ public:
 
 public:
     virtual bool CanHandler() = 0;
-    virtual int32_t Handle(CommonMessage *msg) = 0 ;
+    virtual int32_t Handle(CommonMessage *msg) = 0;
     virtual void OnRecvError(int32_t ret) = 0;
     virtual void OnThreadStart() = 0;
     virtual void OnThreadStop() = 0;
@@ -113,6 +113,52 @@ public:
     bool extended_timestamp;
     int msg_count;
     MessageHeader header;
+};
+
+struct SharedMesageHeader
+{
+    int32_t payload_length;
+    int8_t message_type;
+    int perfer_cid;
+};
+
+class SharedPrtMesage
+{
+public:
+    SharedPrtMesage();
+    virtual ~SharedPrtMesage();
+
+public:
+    virtual int Create(CommonMessage *msg);
+    virtual int Create(MessageHeader *pheader, char *payload, int size);
+    virtual int Count();
+    virtual bool Check(int stream_id);
+    virtual bool IsAV();
+    virtual bool IsAudio();
+    virtual bool IsVideo();
+    virtual int ChunkHeader(char *buf, bool c0);
+    virtual SharedPrtMesage *Copy();
+
+private:
+    class SharedPrtPayload
+    {
+    public:
+        SharedPrtPayload();
+        virtual ~SharedPrtPayload();
+    public:
+        SharedMesageHeader header;
+        char *payload;
+        int size;
+        int shared_count;
+    };
+public:
+    int64_t timestamp;
+    int32_t stream_id;
+    int size;
+    char *payload;
+
+private:
+    SharedPrtPayload *ptr_;
 };
 
 class HandshakeBytes

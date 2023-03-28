@@ -833,6 +833,7 @@ int ConnectAppPacket::GetSize()
     {
         size += AMF0_LEN_OBJECT(command_object);
     }
+    rs_verbose("encode ConnectApp packet succes, size=%d", size);
     return size;
 }
 
@@ -2257,6 +2258,7 @@ int Protocol::DoSimpleSend(MessageHeader *header, char *payload, int size)
         iovs[1].iov_base = p;
         iovs[1].iov_len = nbh;
         p += payload_size;
+        rs_info("### DoSimpleSend %d, %d", payload_size, end-p);
         if (( ret = rw_->WriteEv(iovs, 2, nullptr)) != ERROR_SUCCESS)
         {
             if (!IsClientGracefullyClose(ret))
