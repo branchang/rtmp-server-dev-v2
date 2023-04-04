@@ -3,6 +3,7 @@
 #include <common/error.hpp>
 #include <app/rtmp_server.hpp>
 #include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp_consts.hpp>
 
 RTMPServer::RTMPServer(IProtocolReaderWriter *rw): rw_(rw)
 {
@@ -194,6 +195,7 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
 
     while (true)
     {
+        rs_info("IdentifyClient recvMessage.............");
         rtmp::CommonMessage *msg = nullptr;
         if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS)
         {
@@ -230,4 +232,80 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
 
     return ret;
 
+}
+
+int RTMPServer::StartFmlePublish(int stream_id)
+{
+    int ret = ERROR_SUCCESS;
+    double fc_publish_tid = 0;
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        rtmp::FMLEStartPacket *pkt = nullptr;
+
+        if ((ret = protocol_->ExpectMessage<rtmp::FMLEStartPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+        {
+            rs_error("");
+            return ret;
+        }
+
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rs_auto_free(rtmp::FMLEStartPacket, pkt);
+        fc_publish_tid = pkt->transaction_id;
+    }
+    {
+        rtmp::FMLEStartResPacket *pkt = new rtmp::FMLEStartResPacket(fc_publish_tid);
+        if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
+        {
+            rs_error("");
+            return ret;
+        }
+    }
+
+    double create_stream_id = 0;
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        rtmp::CreateStreamPacket *pkt = nullptr;
+        if ((ret = protocol_->ExpectMessage<rtmp::CreateStreamPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+        {
+            rs_error("");
+            return ret;
+        }
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rs_auto_free(rtmp::CreateStreamPacket, pkt);
+        create_stream_id = pkt->transaction_id;
+    }
+
+    {
+        rtmp::CreateStreamResPacket *pkt = new rtmp::CreateStreamResPacket(create_stream_id, stream_id);
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("");
+            return ret;
+        }
+    }
+
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        rtmp::PublishPacket *pkt = nullptr;
+        if ((ret = protocol_->ExpectMessage<rtmp::PublishPacket>(&msg, &pkt)) != ERROR_SUCCESS)
+        {
+            rs_error("");
+            return ret;
+        }
+        rs_info("recv publish request message success,");
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rs_auto_free(rtmp::PublishPacket, pkt);
+    }
+
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->command_name = RTMP_AMF0_COMMAND_ON_STATUS;
+
+    }
+
+    {
+
+    }
+
+    return ret;
 }
