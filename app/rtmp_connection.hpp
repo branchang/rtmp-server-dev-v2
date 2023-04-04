@@ -25,6 +25,7 @@ protected:
     // Connection
     virtual int32_t DoCycle() override;
 private:
+    Server *server_;
     StSocket *socket_;
     RTMPServer *rtmp_;
     rtmp::Request *request_;
