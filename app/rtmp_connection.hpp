@@ -29,6 +29,8 @@ private:
     StSocket *socket_;
     RTMPServer *rtmp_;
     rtmp::Request *request_;
+    rtmp::Response *response_;
+    rtmp::ConnType type_;
 };
 
 #endif

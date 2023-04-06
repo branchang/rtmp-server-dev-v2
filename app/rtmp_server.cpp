@@ -244,7 +244,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
 
         if ((ret = protocol_->ExpectMessage<rtmp::FMLEStartPacket>(&msg, &pkt)) != ERROR_SUCCESS)
         {
-            rs_error("");
+            rs_error("recv FCPublish message failed,ret=%d", ret);
             return ret;
         }
 
@@ -256,7 +256,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
         rtmp::FMLEStartResPacket *pkt = new rtmp::FMLEStartResPacket(fc_publish_tid);
         if ((ret = protocol_->SendAndFreePacket(pkt, 0)) != ERROR_SUCCESS)
         {
-            rs_error("");
+            rs_error("send FCPublish response message failed, ret=%d", ret);
             return ret;
         }
     }
@@ -267,7 +267,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
         rtmp::CreateStreamPacket *pkt = nullptr;
         if ((ret = protocol_->ExpectMessage<rtmp::CreateStreamPacket>(&msg, &pkt)) != ERROR_SUCCESS)
         {
-            rs_error("");
+            rs_error("recv createdStream message failed,ret=%d", ret);
             return ret;
         }
         rs_auto_free(rtmp::CommonMessage, msg);
@@ -279,7 +279,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
         rtmp::CreateStreamResPacket *pkt = new rtmp::CreateStreamResPacket(create_stream_id, stream_id);
         if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
         {
-            rs_error("");
+            rs_error("send createStream response message failed, ret=%d", ret);
             return ret;
         }
     }
@@ -289,7 +289,7 @@ int RTMPServer::StartFmlePublish(int stream_id)
         rtmp::PublishPacket *pkt = nullptr;
         if ((ret = protocol_->ExpectMessage<rtmp::PublishPacket>(&msg, &pkt)) != ERROR_SUCCESS)
         {
-            rs_error("");
+            rs_error("recv publish message failed,ret=%d", ret);
             return ret;
         }
         rs_info("recv publish request message success,");
@@ -299,11 +299,30 @@ int RTMPServer::StartFmlePublish(int stream_id)
 
     {
         rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
-        pkt->command_name = RTMP_AMF0_COMMAND_ON_STATUS;
+        pkt->command_name = RTMP_AMF0_COMMAND_FC_PUBLISH;
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
 
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Publish.Start) message failed,ret=%d", ret);
+            return ret;
+        }
+        rs_info("send onFCPublish(NetStream.Publish.Start) message success");
     }
 
     {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->data->Set("level", rtmp::AMF0Any::String("status"));
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Publish.Start"));
+        pkt->data->Set("description", rtmp::AMF0Any::String("Started publishing stream"));
+        pkt->data->Set("clientid", rtmp::AMF0Any::String("ASAICiss"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Publish.Start) message failed,ret=%d", ret);
+            return ret;
+        }
+        rs_info("send onStatus(NetStream.Publish.Start) message success");
 
     }
 
