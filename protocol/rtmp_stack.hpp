@@ -161,6 +161,25 @@ private:
     SharedPrtPayload *ptr_;
 };
 
+class MessageArray
+{
+public:
+    MessageArray(int max_msgs);
+    virtual ~MessageArray();
+
+public:
+    virtual void Free(int count);
+    virtual void Zero(int count);
+
+public:
+    SharedPrtMesage **msgs;
+    int max;
+};
+
+class Client
+{
+};
+
 class HandshakeBytes
 {
 public:

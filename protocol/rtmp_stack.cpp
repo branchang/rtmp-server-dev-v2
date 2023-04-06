@@ -310,14 +310,14 @@ CommonMessage::CommonMessage() : size(0),
 
 CommonMessage::~CommonMessage()
 {
-    rs_freep(payload);
+    rs_freepa(payload);
     payload = new char[size];
     rs_verbose("create payload for rtmp message, size=%d", size);
 }
 
 void CommonMessage::CreatePlayload(int32_t size)
 {
-    rs_freep(payload);
+    rs_freepa(payload);
     payload = new char[size];
     rs_verbose("create payload for rtmp message,size=%d", size);
 }
@@ -471,6 +471,38 @@ SharedPrtMesage *SharedPrtMesage::Copy()
     copy->size = ptr_->size;
     return copy;
 }
+
+MessageArray::MessageArray(int max_msgs)
+{
+    msgs = new SharedPrtMesage *[max_msgs];
+    max = max_msgs;
+    Zero(max_msgs);
+}
+
+MessageArray::~MessageArray()
+{
+    rs_freep(msgs);
+}
+
+void MessageArray::Free(int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        SharedPrtMesage *msg = msgs[i];
+        rs_freep(msg);
+        msgs[i] = nullptr;
+    }
+
+}
+
+void MessageArray::Zero(int count)
+{
+    for (int i = 0;i < count; i++)
+    {
+        msgs[i] = nullptr;
+    }
+}
+
 
 HandshakeBytes::HandshakeBytes(): c0c1(nullptr),
                                   s0s1s2(nullptr),
@@ -2105,7 +2137,7 @@ int Protocol::ReadMessagePayload(ChunkStream *cs, CommonMessage **pmsg)
         return ret;
     }
 
-    rs_verbose("got part of rtmp message(type=%d,size=%d,time=%lld,size=%d),partial size=%d", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id, cs->msg->size);
+    rs_verbose("got part of rtmp message(type=%d,size=%d,time=%lld,sid=%d),partial size=%d", cs->header.message_type, cs->header.payload_length, cs->header.timestamp, cs->header.stream_id, cs->msg->size);
 
     return ret;
 }
