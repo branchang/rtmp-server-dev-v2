@@ -41,12 +41,12 @@ void RTMPServer::SetSendTimeout(int64_t timeout_us)
     protocol_->SetSendTimeout(timeout_us);
 }
 
-int32_t RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
-{
-    int ret = ERROR_SUCCESS;
-    protocol_->RecvMessage(pmsg);
-    return ret;
-}
+// int32_t RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
+// {
+//     int ret = ERROR_SUCCESS;
+//     protocol_->RecvMessage(pmsg);
+//     return ret;
+// }
 
 int RTMPServer::ConnectApp(rtmp::Request *req)
 {

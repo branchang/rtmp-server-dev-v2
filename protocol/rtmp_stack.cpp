@@ -337,12 +337,12 @@ ChunkStream::~ChunkStream()
 }
 
 
-SharedPrtMesage::SharedPrtMesage() : ptr_(nullptr)
+SharedPtrMessage::SharedPtrMessage() : ptr_(nullptr)
 {
 
 }
 
-SharedPrtMesage::~SharedPrtMesage()
+SharedPtrMessage::~SharedPtrMessage()
 {
     if(ptr_)
     {
@@ -357,19 +357,19 @@ SharedPrtMesage::~SharedPrtMesage()
     }
 }
 
-SharedPrtMesage::SharedPrtPayload::SharedPrtPayload() : payload(nullptr),
+SharedPtrMessage::SharedPrtPayload::SharedPrtPayload() : payload(nullptr),
                                                         size(0),
                                                         shared_count(0)
 {
 
 }
 
-SharedPrtMesage::SharedPrtPayload::~SharedPrtPayload()
+SharedPtrMessage::SharedPrtPayload::~SharedPrtPayload()
 {
     rs_freep(payload);
 }
 
-int SharedPrtMesage::Create(MessageHeader *pheader, char *payload, int )
+int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
 {
     int ret = ERROR_SUCCESS;
 
@@ -394,7 +394,7 @@ int SharedPrtMesage::Create(MessageHeader *pheader, char *payload, int )
     return ret;
 }
 
-int SharedPrtMesage::Create(CommonMessage *msg)
+int SharedPtrMessage::Create(CommonMessage *msg)
 {
     int ret = ERROR_SUCCESS;
 
@@ -408,12 +408,12 @@ int SharedPrtMesage::Create(CommonMessage *msg)
     return ret;
 }
 
-int SharedPrtMesage::Count()
+int SharedPtrMessage::Count()
 {
     return ptr_->shared_count;
 }
 
-bool SharedPrtMesage::Check(int stream_id)
+bool SharedPtrMessage::Check(int stream_id)
 {
     if (ptr_->header.perfer_cid < 2 || ptr_->header.perfer_cid > 63)
     {
@@ -430,23 +430,23 @@ bool SharedPrtMesage::Check(int stream_id)
     return false;
 }
 
-bool SharedPrtMesage::IsAV()
+bool SharedPtrMessage::IsAV()
 {
     return ptr_->header.message_type == RTMP_MSG_AUDIO_MESSAGE ||
            ptr_->header.message_type == RTMP_MSG_VIDEO_MESSAGE;
 }
 
-bool SharedPrtMesage::IsAudio()
+bool SharedPtrMessage::IsAudio()
 {
     return ptr_->header.message_type == RTMP_MSG_AUDIO_MESSAGE;
 }
 
-bool SharedPrtMesage::IsVideo()
+bool SharedPtrMessage::IsVideo()
 {
     return ptr_->header.message_type == RTMP_MSG_VIDEO_MESSAGE;
 }
 
-int SharedPrtMesage::ChunkHeader(char *buf, bool c0)
+int SharedPtrMessage::ChunkHeader(char *buf, bool c0)
 {
     if (c0)
     {
@@ -459,9 +459,9 @@ int SharedPrtMesage::ChunkHeader(char *buf, bool c0)
     }
 }
 
-SharedPrtMesage *SharedPrtMesage::Copy()
+SharedPtrMessage *SharedPtrMessage::Copy()
 {
-    SharedPrtMesage *copy = new SharedPrtMesage;
+    SharedPtrMessage *copy = new SharedPtrMessage;
     copy->ptr_ = ptr_;
     ptr_->shared_count++;
 
@@ -474,7 +474,8 @@ SharedPrtMesage *SharedPrtMesage::Copy()
 
 MessageArray::MessageArray(int max_msgs)
 {
-    msgs = new SharedPrtMesage *[max_msgs];
+    // TODO
+    msgs = new SharedPtrMessage *[max_msgs];
     max = max_msgs;
     Zero(max_msgs);
 }
@@ -488,7 +489,7 @@ void MessageArray::Free(int count)
 {
     for (int i = 0; i < count; i++)
     {
-        SharedPrtMesage *msg = msgs[i];
+        SharedPtrMessage *msg = msgs[i];
         rs_freep(msg);
         msgs[i] = nullptr;
     }

@@ -122,11 +122,11 @@ struct SharedMesageHeader
     int perfer_cid;
 };
 
-class SharedPrtMesage
+class SharedPtrMessage
 {
 public:
-    SharedPrtMesage();
-    virtual ~SharedPrtMesage();
+    SharedPtrMessage();
+    virtual ~SharedPtrMessage();
 
 public:
     virtual int Create(CommonMessage *msg);
@@ -137,7 +137,7 @@ public:
     virtual bool IsAudio();
     virtual bool IsVideo();
     virtual int ChunkHeader(char *buf, bool c0);
-    virtual SharedPrtMesage *Copy();
+    virtual SharedPtrMessage *Copy();
 
 private:
     class SharedPrtPayload
@@ -172,7 +172,7 @@ public:
     virtual void Zero(int count);
 
 public:
-    SharedPrtMesage **msgs;
+    SharedPtrMessage **msgs;
     int max;
 };
 
