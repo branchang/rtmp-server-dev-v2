@@ -249,9 +249,11 @@ void FastBuffer::SetBuffer(int32_t buffer_size)
 {
     if (buffer_size > RS_MAX_SOCKET_BUFFER_SIZE)
     {
-        rs_warn("");
+        rs_warn("limit user space buffer from %d to %d", buffer_size, RS_MAX_SOCKET_BUFFER_SIZE);
     }
     buffer_size = rs_min(RS_MAX_SOCKET_BUFFER_SIZE, buffer_size);
+    
+    rs_trace("user space recv buffer size set to %d", buffer_size);
 
     if (buffer_size < capacity_)
     {

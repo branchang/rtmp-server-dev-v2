@@ -38,3 +38,18 @@ bool Config::GetATC(const std::string &vhost)
     return false;
 }
 
+bool Config::GetMREnabled(const std::string &vhost)
+{
+    return false;
+}
+
+int Config::GetMRSleepMS(const std::string &vhost)
+{
+    return 350;
+}
+
+bool Config::GetRealTimeEnabled(const std::string &host)
+{
+    return false;
+}
+

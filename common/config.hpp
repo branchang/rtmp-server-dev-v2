@@ -16,6 +16,9 @@ public:
 
     virtual int32_t getChunkSize(const std::string &vhost);
     virtual bool GetATC(const std::string &vhost);
+    virtual bool GetMREnabled(const std::string &vhost);
+    virtual int GetMRSleepMS(const std::string &vhost);
+    virtual bool GetRealTimeEnabled(const std::string &host);
 
 };
 

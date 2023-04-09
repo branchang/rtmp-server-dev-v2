@@ -104,7 +104,7 @@ int32_t RTMPConnection::StreamServiceCycle()
                 rs_error("start to publish stream failed,ret=%d", ret);
                 return ret;
             }
-            break;
+            return Publishing(source);
         case rtmp::ConnType::PLAY:
             break;
         case rtmp::ConnType::UNKNOW:
