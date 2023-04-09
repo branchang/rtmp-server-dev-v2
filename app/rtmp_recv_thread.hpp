@@ -54,11 +54,13 @@ public:
     //rtmp::IMessageHandler
     virtual void OnThreadStart() override;
     virtual void OnThreadStop() override;
+    virtual int Handle(rtmp::CommonMessage *msg) override;
+    virtual void OnRecvError(int32_t ret) override;
     virtual void OnRead(ssize_t nread) override;
 
 private:
     void set_socket_buffer(int sleep_ms);
-    
+
 private:
     RTMPRecvThread *thread_;
     RTMPServer *rtmp_;
