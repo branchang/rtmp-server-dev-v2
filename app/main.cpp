@@ -36,6 +36,7 @@ int32_t main(int argc, char *argv[])
 
     RTMPStreamListener listener(_server, ListenerType::RTMP);
     listener.Listen("0.0.0.0", 1935);
-    st_usleep(1000000000);
+    while(1)
+        st_usleep(1000000000);
     return 0;
 }

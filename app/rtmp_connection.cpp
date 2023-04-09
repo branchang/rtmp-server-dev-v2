@@ -114,6 +114,12 @@ int32_t RTMPConnection::StreamServiceCycle()
     return ret;
 }
 
+int32_t RTMPConnection::Publishing(rtmp::Source *source)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
 int32_t RTMPConnection::ServiceCycle()
 {
     int ret = ERROR_SUCCESS;
