@@ -536,6 +536,8 @@ public:
     virtual int RecvMessage(CommonMessage **pmsg);
     virtual int DecodeMessage(CommonMessage *msg, Packet **ppacket);
     virtual int SendAndFreePacket(Packet *packet, int stream_id);
+    virtual void SetRecvBuffer(int buffer_size);
+    virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
 
     template <typename T>
     int ExpectMessage(CommonMessage **pmsg, T **ppacket)

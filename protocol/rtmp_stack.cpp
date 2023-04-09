@@ -2548,4 +2548,14 @@ int Protocol::OnRecvMessage(CommonMessage *msg)
     return ret;
 }
 
+void Protocol::SetRecvBuffer(int buffer_size)
+{
+    in_buffer_->SetBuffer(buffer_size);
+}
+
+void Protocol::SetMargeRead(bool v, IMergeReadHandler *handler)
+{
+    in_buffer_->SetMergeReadHandler(v, handler);
+}
+
 }

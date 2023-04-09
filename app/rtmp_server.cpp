@@ -328,3 +328,18 @@ int RTMPServer::StartFmlePublish(int stream_id)
 
     return ret;
 }
+
+int RTMPServer::RecvMessage(rtmp::CommonMessage **pmsg)
+{
+    return protocol_->RecvMessage(pmsg);
+}
+
+void RTMPServer::SetRecvBuffer(int buffer_size)
+{
+   protocol_->SetRecvBuffer(buffer_size); 
+}
+
+void RTMPServer::SetMargeRead(bool v, IMergeReadHandler *handler)
+{
+    protocol_->SetMargeRead(v, handler);
+}
