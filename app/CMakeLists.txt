@@ -1,8 +1,8 @@
 
 add_executable(rtmp_server_dev EXCLUDE_FROM_ALL
     main.cpp
-    recv_thread.cpp
     server.cpp
+    rtmp_recv_thread.cpp
     rtmp_connection.cpp
     rtmp_server.cpp
 )
