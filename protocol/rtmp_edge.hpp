@@ -18,6 +18,9 @@ enum EdgeState
     PUBLISH = 200,
 };
 
+
+class PublishEdge;
+
 class EdgeForwarder : public internal::IThreadHandler
 {
 public:
@@ -26,12 +29,29 @@ public:
 
 public:
     virtual int Initialize();
+    virtual void SetQueueSize(double queue_size);
+    virtual int Start();
+    virtual void Stop();
+    virtual int Proxy(CommonMessage *msg);
     // internal::IThreadHandler
     virtual int Cycle() override;
 
 private:
+    virtual void CloseUnderLayerSocket();
+    virtual int ConnectServer(const std::string &ep_server, const std::string &ep_port);
+    virtual int ConnectApp(const std::string &ep_server, const std::string &ep_port);
+
+private:
+    int stream_id;
+    Source *source_;
+    PublishEdge *edge_;
+    Request request_;
     internal::Thread *thread_;
+    st_netfd_t stfd_;
     IProtocolReaderWriter *rw_;
+    Kbps *kpps_;
+    Client *client_;
+    int origin_index;
 };
 
 class PublishEdge
