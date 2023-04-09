@@ -143,6 +143,7 @@ private:
     Request *request_;
     bool atc_;
     ISourceHandler *handler_;
+    bool can_publish_;
 };
 
 } //namespace rtmp

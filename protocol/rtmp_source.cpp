@@ -229,9 +229,23 @@ int Consumer::Enqueue(SharedPtrMessage *shared_msg, bool atc, JitterAlgorithm ag
     return ret;
 }
 
-int Consumer::DumpPackets()
+int Consumer::DumpPackets(MessageArray *msg_arr, int &count)
 {
+    int ret = ERROR_SUCCESS;
+    int max = count ? rs_min(count, msg_arr->max) : msg_arr->max;
 
+    count = 0;
+    if (pause_)
+    {
+        return ret;
+    }
+
+    if ((ret  = queue_->DumpPackets(max, msg_arr->msgs, count)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    return ret;
 }
 
 void Consumer::Wait(int nb_msgs, int duration)
@@ -255,6 +269,25 @@ void Consumer::Wait(int nb_msgs, int duration)
 
     mw_waiting_ = true;
     st_cond_wait(mw_wait_);
+}
+
+int Consumer::OnPlayClientPause(bool is_pause)
+{
+    int ret = ERROR_SUCCESS;
+
+    pause_ = is_pause;
+
+    return ret;
+}
+
+void Consumer::WakeUp()
+{
+
+    if (mw_waiting_)
+    {
+        st_cond_signal(mw_wait_);
+        mw_waiting_ = false;
+    }
 }
 
 
@@ -462,6 +495,17 @@ int Source::Initialize(Request *r, ISourceHandler *h)
     request_ = r->Copy();
     atc_ = _config->GetATC(r->vhost);
     return ret;
+}
+
+
+bool Source::CanPublish(bool is_edge)
+{
+    return can_publish_;
+}
+
+void Source::OnConsumerDestory(Consumer *consumer)
+{
+
 }
 
 } // namespace rtmp
