@@ -5,13 +5,14 @@
 #include <common/thread.hpp>
 #include <protocol/rtmp_stack.hpp>
 // #include <protocol/buffer.hpp>
+#include <app/rtmp_connection.hpp>
 #include <app/server.hpp>
 
-class RecvThread : virtual public internal::IThreadHandler
+class RTMPRecvThread : virtual public internal::IThreadHandler
 {
 public:
-    RecvThread(rtmp::IMessageHander *message_handler, Server *server, int32_t timeout);
-    virtual ~RecvThread();
+    RTMPRecvThread(rtmp::IMessageHander *message_handler, RTMPServer *rtmp, int32_t timeout);
+    virtual ~RTMPRecvThread();
 
 public:
     virtual int32_t GetID();
@@ -19,14 +20,15 @@ public:
     virtual void Stop();
     virtual void StopLoop();
 
+    // virtual void OnThreadStart() override;
     virtual void OnThreadStart() override;
     virtual int32_t Cycle() override;
     virtual void OnThreadStop() override;
 private:
-    rtmp::IMessageHander *message_handler_;
-    Server *server_;
-    int32_t timeout_;
     internal::Thread *thread_;
+    rtmp::IMessageHander *handler_;
+    RTMPServer *rtmp_;
+    int32_t timeout_;
 };
 
 class PublishRecvThread : virtual public rtmp::IMessageHander

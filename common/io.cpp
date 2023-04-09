@@ -61,3 +61,13 @@ IProtocolReaderWriter::~IProtocolReaderWriter()
 {
 
 }
+
+IMergeReadHandler::IMergeReadHandler()
+{
+
+}
+
+IMergeReadHandler::~IMergeReadHandler()
+{
+	
+}

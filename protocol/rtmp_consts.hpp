@@ -1,8 +1,11 @@
 #ifndef RS_CONSTS_HPP
 #define RS_CONSTS_HPP
 
+#define RTMP_ST_NO_TIMEOUT (int64_t)(-1LL)
 #define RTMP_SEND_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)
 #define RTMP_RECV_TIMEOUT_US (int64_t)(30 * 1000 * 1000LL)
+//the timeout to wait for client control message
+#define RTMP_PULSE_TIMEOUT_US (int64_t)(500 * 1000LL)
 #define RTMP_DEFAULT_WINDOW_ACK_SIZE (2.5 * 1000 * 1000)
 #define RTMP_DEFAULT_PEER_BAND_WIDTH (2.5 * 1000 * 1000)
 //rtmp default port
@@ -117,5 +120,7 @@
 
 //the timeout to wait for client control message
 #define RTMP_PULSE_TIMEOUT_US (int64_t)(500 * 1000LL)
+//rtmp marge read small bytes
+#define RTMP_MR_SMALL_BYTES 4096
 
 #endif
