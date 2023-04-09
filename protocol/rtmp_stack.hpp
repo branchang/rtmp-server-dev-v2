@@ -33,11 +33,11 @@ enum class PeerBandwidthType
 
 class CommonMessage;
 
-class IMessageHander
+class IMessageHandler
 {
 public:
-    IMessageHander();
-    virtual ~IMessageHander();
+    IMessageHandler();
+    virtual ~IMessageHandler();
 
 public:
     virtual bool CanHandler() = 0;

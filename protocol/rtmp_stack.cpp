@@ -164,13 +164,13 @@ extern void DiscoveryTcUrl(const std::string &tc_url,
 
 }
 
-IMessageHander::IMessageHander()
+IMessageHandler::IMessageHandler()
 {
 
 }
 
 
-IMessageHander::~IMessageHander()
+IMessageHandler::~IMessageHandler()
 {
 
 }

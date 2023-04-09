@@ -5,7 +5,7 @@
 #include <common/config.hpp>
 
 
-RTMPRecvThread::RTMPRecvThread(rtmp::IMessageHander *handler,
+RTMPRecvThread::RTMPRecvThread(rtmp::IMessageHandler *handler,
                                RTMPServer *rtmp,
                                int32_t timeout) : handler_(handler),
                                                   rtmp_(rtmp),
@@ -84,7 +84,14 @@ void RTMPRecvThread::OnThreadStart()
     handler_->OnThreadStart();
 }
 
-PublishRecvThread::PublishRecvThread()
+PublishRecvThread::PublishRecvThread(RTMPServer *rtmp,
+                      rtmp::Request *request,
+                      int mr_socket_fd,
+                      int timeout_ms,
+                      RTMPConnection *conn,
+                      rtmp::Source *source,
+                      bool is_fmle,
+                      bool is_edge)
 {
 
 }
