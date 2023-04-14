@@ -49,7 +49,7 @@ public:
 public:
     virtual int Wait(int timeout_ms);
     virtual int Start();
-    virtual int Stop();
+    virtual void Stop();
     virtual bool CanHandle();
     //rtmp::IMessageHandler
     virtual void OnThreadStart() override;
