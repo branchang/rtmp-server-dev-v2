@@ -140,11 +140,11 @@ public:
     virtual SharedPtrMessage *Copy();
 
 private:
-    class SharedPrtPayload
+    class SharedPtrPayload
     {
     public:
-        SharedPrtPayload();
-        virtual ~SharedPrtPayload();
+        SharedPtrPayload();
+        virtual ~SharedPtrPayload();
     public:
         SharedMesageHeader header;
         char *payload;
@@ -158,7 +158,7 @@ public:
     char *payload;
 
 private:
-    SharedPrtPayload *ptr_;
+    SharedPtrPayload *ptr_;
 };
 
 class MessageArray

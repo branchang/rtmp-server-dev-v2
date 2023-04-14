@@ -357,14 +357,14 @@ SharedPtrMessage::~SharedPtrMessage()
     }
 }
 
-SharedPtrMessage::SharedPrtPayload::SharedPrtPayload() : payload(nullptr),
+SharedPtrMessage::SharedPtrPayload::SharedPtrPayload() : payload(nullptr),
                                                         size(0),
                                                         shared_count(0)
 {
 
 }
 
-SharedPtrMessage::SharedPrtPayload::~SharedPrtPayload()
+SharedPtrMessage::SharedPtrPayload::~SharedPtrPayload()
 {
     rs_freep(payload);
 }
@@ -379,7 +379,7 @@ int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
         rs_error("couldn't set payload twice, ret=%d", ret);
         rs_assert(false);
     }
-    ptr_ = new SharedPrtPayload;
+    ptr_ = new SharedPtrPayload;
     if (pheader)
     {
         ptr_->header.message_type = pheader->message_type;
