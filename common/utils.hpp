@@ -47,6 +47,7 @@ public:
     static int64_t GetSteadyNanoSeconds();
     static int64_t GetSteadyMicroSeconds();
     static int64_t GetSteadyMilliSeconds();
+    static bool BytesEquals(void *ps, void *pb, int size);
 
 };
 
