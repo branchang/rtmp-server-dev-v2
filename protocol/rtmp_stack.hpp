@@ -605,6 +605,7 @@ private:
     AckWindowSize in_ack_size_;
     AckWindowSize out_ack_size_;
     std::vector<Packet *> manual_response_queue_;
+    std::map<double, std::string> requests_;
 };
 
 } // namespace rtmp
