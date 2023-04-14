@@ -166,17 +166,17 @@ void Thread::Dispose()
     if (disposed_)
         return;
 
-        st_thread_interrupt(st_);
-        if(joinable_)
-        {
-            st_thread_join(st_, nullptr);
-        }
+    st_thread_interrupt(st_);
+    if(joinable_)
+    {
+        st_thread_join(st_, nullptr);
+    }
 
-        while (!really_terminated_)
-        {
-            st_usleep(10 * 1000);
-        }
-        disposed_ = true;
+    while (!really_terminated_)
+    {
+        st_usleep(10 * 1000);
+    }
+    disposed_ = true;
 }
 
 void Thread::Stop()

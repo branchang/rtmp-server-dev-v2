@@ -435,7 +435,16 @@ std::map<std::string, Source *> Source::pool_;
 
 Source::Source() : request_(nullptr)
 {
-
+    request_ = nullptr;
+    atc_ = false;
+    handler_ = nullptr;
+    can_publish_ = true;
+    mix_correct_ = true;
+    is_monotonically_increase_ = true;
+    last_packet_time_ = 0;
+    cache_metadata_ = nullptr;
+    cache_sh_video_ = nullptr;
+    cache_sh_audio_ = nullptr;
 }
 
 Source::~Source()
@@ -505,6 +514,54 @@ bool Source::CanPublish(bool is_edge)
 
 void Source::OnConsumerDestory(Consumer *consumer)
 {
+
+}
+
+int Source::on_audio_impl(SharedPtrMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+    bool is_aac_sequence_header = flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size);
+    bool is_sequence_header = is_aac_sequence_header;
+
+    bool drop_for_reduce = false;
+    if (is_sequence_header && cache_sh_audio_)
+    {
+        if (cache_sh_audio_->size == msg->size)
+        {
+            drop_for_reduce = Utils::
+        }
+
+    }
+
+}
+
+int Source::OnAudio(CommonMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!mix_correct_ && is_monotonically_increase_)
+    {
+        if (last_packet_time_ > 0 && msg->header.timestamp < last_packet_time_)
+        {
+            is_monotonically_increase_ = false;
+            rs_warn("AUDIO: stream not monotonically increase, please open mix_correct.");
+        }
+    }
+
+    last_packet_time_ = msg->header.timestamp;
+    SharedPtrMessage shared_msg;
+    if ((ret = shared_msg.Create(msg)) != ERROR_SUCCESS)
+    {
+        rs_error("initialize the audio failed, ret=%d", ret);
+        return ret;
+    }
+
+    if (!mix_correct_)
+    {
+        return on_audio_impl(&shared_msg);
+    }
+
+    return ret;
 
 }
 

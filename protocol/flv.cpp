@@ -67,7 +67,7 @@ void CodecSample::Clear()
     has_sps_pps = false;
     has_aud = false;
     first_nalu_type = AVCNaluType::UNKNOW;
-    
+
 
 }
 
@@ -188,7 +188,7 @@ bool Codec::IsAudioSeqenceHeader(char *data, int size)
 
     char packet_type = data[1];
 
-    return packet_type == (char)VIdeoPacketType::SEQUENCE_HEADER;
+    return packet_type == (char)AudioPakcetType::SEQUENCE_HEADER;
 
 }
 
