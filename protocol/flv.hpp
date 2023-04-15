@@ -120,7 +120,7 @@ enum class AACObjectType
 };
 
 extern std::string ACodec2Str(AudioCodecType codec_type);
-extern std::string AAProfile2Str(AACObjectType object_type);
+extern std::string AACProfile2Str(AACObjectType object_type);
 
 class CodecSampleUnit
 {

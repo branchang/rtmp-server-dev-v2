@@ -388,8 +388,8 @@ int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
         timestamp = pheader->timestamp;
         stream_id = pheader->stream_id;
     }
-    ptr_->payload = payload;
-    size = ptr_->size;
+    this->ptr_->payload = payload;
+    this->size = ptr_->size;
 
     return ret;
 }

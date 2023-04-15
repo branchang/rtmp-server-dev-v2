@@ -528,9 +528,47 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
     {
         if (cache_sh_audio_->size == msg->size)
         {
-            drop_for_reduce = Utils::
+            drop_for_reduce = Utils::BytesEquals(cache_sh_audio_->payload, msg->payload, msg->size);
+            rs_warn("drop for reduce sh audio, size=%d", msg->size);
+        }
+    }
+
+    if (is_aac_sequence_header)
+    {
+        flv::Codec codec;
+        flv::CodecSample sample;
+
+        if ((ret = codec.DemuxAudio(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
+        {
+            rs_error("source codec demux audio failed, ret=%d", ret);
+            return ret;
         }
 
+        static int sample_sizes[] = {8, 16, 0};
+        static int sound_types[] = {1, 2, 0};
+        static int flv_sample_rates[] = {5512, 11025, 22050, 44100, 0};
+
+        rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv sample rate: %dHz", msg->size,
+                 codec.audio_codec_id,
+                 flv::AACProfile2Str(codec.aac_object_type).c_str(),
+                 sample.aac_sample_rate,
+                 sample_sizes[(int)sample.sound_size],
+                 sound_types[(int)sample.sound_type],
+                 flv_sample_rates[(int)sample.flv_sample_rate]);
+
+    }
+
+    if (!drop_for_reduce)
+    {
+        for (int i = 0; i < (int)consumers_.size(); i++)
+        {
+            Consumer *consumer = consumers_.at(i);
+            if ((ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) != ERROR_SUCCESS)
+            {
+                rs_error("dispatch audio failed, ret=%d", ret);
+                return ret;
+            }
+        }
     }
 
 }
