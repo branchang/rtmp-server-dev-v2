@@ -2299,7 +2299,7 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
     }
     else if (header.IsAMF0Command() || header.IsAMF0Data())
     {
-        rs_verbose("start to decode amf0 command  message");
+        rs_verbose("start to decode amf0 command message");
         std::string command;
         if ((ret = AMF0ReadString(manager, command)) != ERROR_SUCCESS)
         {
@@ -2308,6 +2308,49 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
         }
 
         rs_verbose("decode amf0 command name success, command_name=%s", command.c_str());
+        if (command == RTMP_AMF0_COMMAND_RESULT || command == RTMP_AMF0_COMMAND_ERROR)
+        {
+            double transaction_id = 0.0;
+            if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+            {
+                rs_error("decode amf0 transaction_id failed, ret=%d", ret);
+                return ret;
+            }
+            manager->Skip(-1 * manager->Pos());
+            if (requests_.find(transaction_id) == requests_.end())
+            {
+                return ERROR_RTMP_NO_REQUEST;
+                rs_error("decode amf0 request failed.ret=%d", ret);
+                return ret;
+            }
+            std::string request_name = requests_[transaction_id];
+            if (request_name == RTMP_AMF0_COMMAND_CONNECT)
+            {
+                *ppacket = packet = new ConnectAppResPacket;
+                return packet->Decode(manager);
+            }
+            else if (request_name == RTMP_AMF0_COMMAND_CREATE_STREAM)
+            {
+                *ppacket = packet = new CreateStreamResPacket(0, 0);
+                return packet->Decode(manager);
+            }
+            else if (request_name == RTMP_AMF0_COMMAND_RELEASE_STREAM ||
+                     request_name == RTMP_AMF0_COMMAND_FC_PUBLISH ||
+                     request_name == RTMP_AMF0_COMMAND_UNPUBLISH)
+            {
+                *ppacket = packet = new FMLEStartResPacket(0);
+                return packet->Decode(manager);
+            }
+            else
+            {
+                ret = ERROR_RTMP_NO_REQUEST;
+                rs_error("decode amf0 request failed."
+                            "request_name=%s, transacation_id=%d, ret=%d", 
+                            request_name.c_str(), transaction_id, ret);
+                return ret;
+            }
+
+        }
 
         // reset buffer manager. start to decode amf0 packet
         manager->Skip(-1 * manager->Pos());
@@ -2334,6 +2377,12 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
         {
             rs_verbose("decode amf0 command message()");
             *ppacket = packet = new PublishPacket;
+            return packet->Decode(manager);
+        }
+        else
+        {
+            rs_warn("drop the amf0 command message, command_name=%s", command.c_str());
+            *ppacket = packet =new Packet;
             return packet->Decode(manager);
         }
 
