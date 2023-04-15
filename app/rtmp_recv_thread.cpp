@@ -207,6 +207,26 @@ void PublishRecvThread::OnRead(ssize_t nread)
 
 }
 
+int PublishRecvThread::Handle(rtmp::CommonMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (ncid != cid)
+    {
+        _context->SetID(ncid);
+        cid = ncid;
+    }
+    nb_msgs_++;
+    
+    if (msg->header.IsVideo())
+    {
+        video_frames_++;
+    }
+
+    rs_freep(msg);
+    return ret;
+}
+
 bool PublishRecvThread::CanHandle()
 {
     return true;
