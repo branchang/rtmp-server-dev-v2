@@ -168,13 +168,12 @@ protected:
     virtual bool GenerateHeader(bool error, const char *tag, int context_id, const char* level_name, int32_t *header_size);
     virtual void WriteLog(int &fd, char *str_log, int32_t size, int32_t level);
 
-protected:
-    int32_t level_;
 private:
     int32_t fd_;
     bool log_to_file_tank_;
     bool utc_;
     char *log_data_;
+    int32_t level_;
 };
 
 class ThreadContext:public IThreadContext

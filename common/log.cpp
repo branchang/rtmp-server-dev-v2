@@ -79,6 +79,7 @@ FastLog::FastLog() : fd_(-1),
                      utc_(false)
 {
     log_data_ = new char[LOG_MAX_SIZE];
+    level_ = LogLevel::INFO;
 }
 
 FastLog::~FastLog()
