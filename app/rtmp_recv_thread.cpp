@@ -217,7 +217,7 @@ int PublishRecvThread::Handle(rtmp::CommonMessage *msg)
         cid = ncid;
     }
     nb_msgs_++;
-    
+
     if (msg->header.IsVideo())
     {
         video_frames_++;
@@ -231,10 +231,31 @@ int PublishRecvThread::Handle(rtmp::CommonMessage *msg)
 
 void PublishRecvThread::OnRecvError(int32_t ret)
 {
-    
+   recv_error_code_ = ret;
+   st_cond_signal(error_);
 }
 
 bool PublishRecvThread::CanHandle()
 {
     return true;
+}
+
+int PublishRecvThread::GetCID()
+{
+    return ncid;
+}
+
+void PublishRecvThread::SetCID(int cid)
+{
+    ncid = cid;
+}
+
+int PublishRecvThread::ErrorCode()
+{
+    return recv_error_code_;
+}
+
+int64_t PublishRecvThread::GetMsgNum()
+{
+    return nb_msgs_;
 }

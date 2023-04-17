@@ -51,6 +51,10 @@ public:
     virtual int Start();
     virtual void Stop();
     virtual bool CanHandle();
+    virtual int GetCID();
+    virtual void SetCID(int cid);
+    virtual int ErrorCode();
+    virtual int64_t GetMsgNum();
     //rtmp::IMessageHandler
     virtual void OnThreadStart() override;
     virtual void OnThreadStop() override;
