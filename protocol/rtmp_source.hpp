@@ -142,6 +142,7 @@ protected:
 
 private:
     int on_audio_impl(SharedPtrMessage *msg);
+    int on_video_impl(SharedPtrMessage *msg);
 
 private:
     static std::map<std::string, Source *> pool_;

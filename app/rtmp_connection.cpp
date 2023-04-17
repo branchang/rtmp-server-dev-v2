@@ -194,6 +194,11 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
 
     if (msg->header.IsAudio())
     {
+        if ((ret = source->OnAudio(msg)) != ERROR_SUCCESS)
+        {
+            rs_error("source process audio message failed. ret=%d", ret);
+            return ret;
+        }
 
     }
 
@@ -203,7 +208,7 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
 int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge)
 {
     int ret = ERROR_SUCCESS;
-    
+
     if (msg->header.IsAMF0Command() || msg->header.IsAMF3Command())
     {
         rtmp::Packet *packet = nullptr;
@@ -223,7 +228,7 @@ int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMes
 
         if (dynamic_cast<rtmp::FMLEStartPacket *>(packet))
         {
-            rtmp::FMLEStartPacket *pkt = dynamic_cast<rtmp::FMLEStartPacket *>(packet); 
+            rtmp::FMLEStartPacket *pkt = dynamic_cast<rtmp::FMLEStartPacket *>(packet);
             if ((ret = rtmp_->FMLEUnPublish(response_->stream_id, pkt->transaction_id)) != ERROR_SUCCESS)
             {
                 return ret;
