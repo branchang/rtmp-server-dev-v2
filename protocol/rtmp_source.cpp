@@ -3,6 +3,8 @@
 #include <protocol/flv.hpp>
 #include <common/config.hpp>
 
+#define MIX_CORRECT_PURE_AV 10
+
 namespace rtmp
 {
 
@@ -431,6 +433,83 @@ ISourceHandler::~ISourceHandler()
 {
 }
 
+MixQueue::MixQueue()
+{
+    nb_videos_ = 0;
+    nb_audios_ = 0;
+}
+
+MixQueue::~MixQueue()
+{
+    Clear();
+}
+
+void MixQueue::Clear()
+{
+    std::multimap<int64_t, SharedPtrMessage *>::iterator it;
+    for(it=msgs_.begin(); it != msgs_.end(); it++)
+    {
+        SharedPtrMessage *msg = it->second;
+        rs_freep(msg);
+    }
+    msgs_.clear();
+    nb_videos_ = 0;
+    nb_audios_ = 0;
+}
+
+void MixQueue::Push(SharedPtrMessage *msg)
+{
+    if (msg->IsVideo())
+    {
+        nb_videos_++;
+    }
+    else
+    {
+        nb_audios_++;
+    }
+
+    msgs_.insert(std::make_pair(msg->timestamp, msg));
+}
+
+SharedPtrMessage* MixQueue::Pop()
+{
+    bool mix_ok = false;
+
+    if (nb_videos_ >= MIX_CORRECT_PURE_AV && nb_audios_ == 0)
+    {
+        mix_ok = true;
+    }
+
+    if (nb_audios_ >= MIX_CORRECT_PURE_AV && nb_videos_ == 0)
+    {
+        mix_ok = true;
+    }
+
+    if (nb_audios_ > 0 && nb_audios_ > 0)
+    {
+        mix_ok = true;
+    }
+
+    if (!mix_ok)
+    {
+        return nullptr;
+    }
+
+    std::multimap<int64_t, SharedPtrMessage *>::iterator it = msgs_.begin();
+    SharedPtrMessage *msg = it->second;
+    msgs_.erase(it);
+    if (msg->IsAudio())
+    {
+        nb_audios_--;
+    }
+    else
+    {
+        nb_videos_--;
+    }
+    return msg;
+}
+
+
 std::map<std::string, Source *> Source::pool_;
 
 Source::Source() : request_(nullptr)
@@ -445,10 +524,15 @@ Source::Source() : request_(nullptr)
     cache_metadata_ = nullptr;
     cache_sh_video_ = nullptr;
     cache_sh_audio_ = nullptr;
+    mix_queue_ = new MixQueue;
 }
 
 Source::~Source()
 {
+    rs_freep(mix_queue_);
+    rs_freep(cache_sh_audio_);
+    rs_freep(cache_sh_video_);
+    rs_freep(cache_metadata_);
     rs_freep(request_);
 }
 
@@ -515,6 +599,12 @@ bool Source::CanPublish(bool is_edge)
 void Source::OnConsumerDestory(Consumer *consumer)
 {
 
+}
+
+int Source::on_video_impl(SharedPtrMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
 }
 
 int Source::on_audio_impl(SharedPtrMessage *msg)
@@ -599,8 +689,26 @@ int Source::OnAudio(CommonMessage *msg)
         return on_audio_impl(&shared_msg);
     }
 
-    return ret;
+    mix_queue_->Push(shared_msg.Copy());
 
+    SharedPtrMessage *m = mix_queue_->Pop();
+    if(!m)
+    {
+        return ret;
+    }
+
+    if (m->IsAudio())
+    {
+        on_audio_impl(m);
+    }
+    else
+    {
+        on_video_impl(m);
+    }
+
+    rs_freep(m);
+
+    return ret;
 }
 
 } // namespace rtmp

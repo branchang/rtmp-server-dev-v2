@@ -125,6 +125,21 @@ private:
     FastVector msgs_;
 };
 
+class MixQueue
+{
+public:
+    MixQueue();
+    virtual ~MixQueue();
+public:
+    virtual void Clear();
+    virtual void Push(SharedPtrMessage *msg);
+    virtual SharedPtrMessage *Pop();
+private:
+    uint32_t nb_videos_;
+    uint32_t nb_audios_;
+    std::multimap<int64_t, SharedPtrMessage *> msgs_;
+};
+
 class Source
 {
 public:
@@ -158,6 +173,7 @@ private:
     SharedPtrMessage *cache_sh_audio_;
     std::vector<Consumer *> consumers_;
     JitterAlgorithm jitter_algorithm_;
+    MixQueue *mix_queue_;
 };
 
 } //namespace rtmp
