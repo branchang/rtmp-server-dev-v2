@@ -9,10 +9,13 @@
 #include <app/rtmp_server.hpp>
 #include <app/rtmp_recv_thread.hpp>
 
+class PublishRecvThread;
+
+
 class RTMPConnection : virtual public Connection
 {
     friend class PublishRecvThread;
-    
+
 public:
     RTMPConnection(Server *server, st_netfd_t stfd);
     virtual ~RTMPConnection();
@@ -32,6 +35,8 @@ protected:
 private:
     int handle_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_fmle, bool is_edge);
     int process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge);
+    int do_publish(rtmp::Source *source, PublishRecvThread *recv_thread);
+    void set_socket_option();
 
 private:
     Server *server_;
@@ -40,6 +45,10 @@ private:
     rtmp::Request *request_;
     rtmp::Response *response_;
     rtmp::ConnType type_;
+    bool tcp_nodelay_;
+
+    int publish_first_pkt_timeout_;
+    int publish_normal_pkt_timeout_;
 };
 
 #endif

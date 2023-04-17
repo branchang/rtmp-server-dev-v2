@@ -8,6 +8,8 @@
 #include <app/rtmp_connection.hpp>
 #include <app/server.hpp>
 
+class RTMPConnection;
+
 class RTMPRecvThread : virtual public internal::IThreadHandler
 {
 public:
@@ -50,7 +52,7 @@ public:
     virtual int Wait(int timeout_ms);
     virtual int Start();
     virtual void Stop();
-    virtual bool CanHandle();
+    virtual bool CanHandler() override;
     virtual int GetCID();
     virtual void SetCID(int cid);
     virtual int ErrorCode();

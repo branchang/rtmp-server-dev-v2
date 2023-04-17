@@ -235,7 +235,7 @@ void PublishRecvThread::OnRecvError(int32_t ret)
    st_cond_signal(error_);
 }
 
-bool PublishRecvThread::CanHandle()
+bool PublishRecvThread::CanHandler()
 {
     return true;
 }

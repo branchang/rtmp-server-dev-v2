@@ -7,6 +7,10 @@
 #include <common/log.hpp>
 #include <common/utils.hpp>
 
+#include <netinet/tcp.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+
 RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd): Connection(server, stfd),
                                                                  server_(server),
                                                                  type_(rtmp::ConnType::UNKNOW)
@@ -15,14 +19,15 @@ RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd): Connection(serv
     response_ = new rtmp::Response;
     socket_ = new StSocket(stfd);
     rtmp_ = new RTMPServer(socket_);
+    tcp_nodelay_ = false;
 }
 
 RTMPConnection::~RTMPConnection()
 {
-    rs_freep(rtmp_);
-    rs_freep(socket_);
     rs_freep(response_);
     rs_freep(request_);
+    rs_freep(rtmp_);
+    rs_freep(socket_);
 }
 
 int32_t RTMPConnection::DoCycle()
@@ -118,6 +123,15 @@ int32_t RTMPConnection::StreamServiceCycle()
 int32_t RTMPConnection::Publishing(rtmp::Source *source)
 {
     int ret = ERROR_SUCCESS;
+
+    bool vhost_is_edge = _config->GetVhostIsEdge(request_->vhost);
+    PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source,type_!=rtmp::ConnType::FMLE_PUBLISH, vhost_is_edge);
+
+    rs_info("start to publish stream %s sucess.", request_->stream.c_str());
+
+    ret = do_publish(source, &recv_thread);
+
+    recv_thread.Stop();
     return ret;
 }
 
@@ -244,5 +258,37 @@ int RTMPConnection::handle_publish_message(rtmp::Source *source, rtmp::CommonMes
         return ret;
     }
 
+    return ret;
+}
+
+
+void RTMPConnection::set_socket_option()
+{
+    bool nvalue = _config->GetTCPNoDelay(request_->vhost);
+    if (nvalue != tcp_nodelay_)
+    {
+        tcp_nodelay_ = nvalue;
+
+        int fd = st_netfd_fileno(client_stfd_);
+        socklen_t nb_v = sizeof(int);
+        int ov = 0;
+
+        getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &ov, &nb_v);
+
+        int nv = tcp_nodelay_;
+        if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nv, nb_v) < 0)
+        {
+            rs_error("set socket TCP_NODELAY=%d failed", nv);
+            return ;
+        }
+
+        getsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nv, &nb_v);
+        rs_trace("set socket TCP_NODELAY=%d success. %d=>%d", tcp_nodelay_, ov, nv);
+    }
+}
+
+int RTMPConnection::do_publish(rtmp::Source *source, PublishRecvThread *recv_thread)
+{
+    int ret = ERROR_SUCCESS;
     return ret;
 }
