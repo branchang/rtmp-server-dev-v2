@@ -12,6 +12,15 @@
 namespace flv
 {
 
+class Encoder
+{
+public:
+    Encoder();
+    virtual ~Encoder();
+public:
+    virtual int Initialize();
+};
+
 enum class VideoCodecType
 {
     SORENSON_H263 = 2,

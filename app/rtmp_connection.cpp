@@ -290,5 +290,64 @@ void RTMPConnection::set_socket_option()
 int RTMPConnection::do_publish(rtmp::Source *source, PublishRecvThread *recv_thread)
 {
     int ret = ERROR_SUCCESS;
+    if ((ret = recv_thread->Start()) != ERROR_SUCCESS)
+    {
+        rs_error("start isolae recv thread failed. ret=%d", ret);
+        return ret;
+    }
+
+    int recv_thread_cid = recv_thread->GetCID();
+    //merge isolate recv thread log
+    recv_thread->SetCID(_context->GetID());
+
+    publish_first_pkt_timeout_ = _config->GetPublishFirstPktTimeout(request_->vhost);
+    publish_normal_pkt_timeout_ = _config->GetPublishNormalPktTimeout(request_->vhost);
+
+    set_socket_option();
+
+    bool mr = _config->GetMREnabled(request_->vhost);
+    int mr_sleep = _config->GetMRSleepMS(request_->vhost);
+
+    rs_trace("start publish mr=%d/%d, first_pkt_timeout=%d, normal_pkt_timeout=%d, rtcid=%d", mr, mr_sleep, publish_first_pkt_timeout_, publish_normal_pkt_timeout_, recv_thread_cid);
+
+    int64_t nb_msgs = 0;
+
+    while (!disposed_)
+    {
+        if (expired_)
+        {
+            ret = ERROR_USER_DISCONNECT;
+            rs_error("connection expired. ret=%d", ret);
+            return ret;
+        }
+
+        if (nb_msgs == 0)
+        {
+            recv_thread->Wait(publish_first_pkt_timeout_);
+        }
+        else
+        {
+            recv_thread->Wait(publish_normal_pkt_timeout_);
+        }
+
+        if ((ret = recv_thread->ErrorCode()) != ERROR_SUCCESS)
+        {
+            if (!IsSystemControlError(ret) && !IsClientGracefullyClose(ret))
+            {
+                rs_error("recv thread failed. ret=%d", ret);
+                return ret;
+            }
+
+        }
+
+        if (recv_thread->GetMsgNum() <= nb_msgs)
+        {
+            ret = ERROR_SOCKET_TIMEOUT;
+            rs_warn("publish timeout %dms, nb_msgs=%lld, ret=%d", nb_msgs?publish_normal_pkt_timeout_: publish_first_pkt_timeout_, nb_msgs, ret);
+            break;
+        }
+
+        nb_msgs = recv_thread->GetMsgNum();
+    }
     return ret;
 }

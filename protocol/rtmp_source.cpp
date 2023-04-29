@@ -3,6 +3,8 @@
 #include <protocol/flv.hpp>
 #include <common/config.hpp>
 
+#include <common/file.hpp>
+
 #define MIX_CORRECT_PURE_AV 10
 
 namespace rtmp
