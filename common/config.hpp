@@ -24,7 +24,9 @@ public:
     virtual int GetPublishFirstPktTimeout(const std::string &vhost);
     virtual int GetPublishNormalPktTimeout(const std::string &vhost);
     virtual bool GetTCPNoDelay(const std::string &vhost);
-
+    virtual int GetDvrTimeJitter(const std::string &vhost);
+    virtual std::string GetDvrPath(const std::string &vhost);
+    virtual bool GetUTCTime();
 };
 
 extern Config *_config;

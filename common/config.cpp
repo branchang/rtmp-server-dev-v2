@@ -78,3 +78,18 @@ bool Config::GetTCPNoDelay(const std::string &vhost)
 {
     return true;
 }
+
+int Config::GetDvrTimeJitter(const std::string &vhost)
+{
+    return 1;
+}
+
+std::string Config::GetDvrPath(const std::string &vhost)
+{
+    return "/tmp/flv_test";
+}
+
+bool Config::GetUTCTime()
+{
+    return false;
+}
