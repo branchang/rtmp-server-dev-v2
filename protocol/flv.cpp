@@ -503,8 +503,145 @@ int Encoder::WriteMetadata(char *data, int size)
     {
         return ret;
     }
+    if ((ret = write_tag(tag_header, sizeof(tag_header), data, size)) != ERROR_SUCCESS)
+    {
+        if (!IsClientGracefullyClose(ret))
+        {
+            rs_error("write flv metadata tag failed.ret=%d", ret);
+        }
+        return ret;
+    }
+    return ret;
 }
 
+int Encoder::WriteAudio(int64_t timestamp, char *data, int size)
+{
+    int ret = ERROR_SUCCESS;
+
+    char tag_header[FLV_TAG_HEADER_SIZE];
+    if ((ret = write_tag_header_to_cache((char)TagType::AUDIO, size, timestamp, tag_header)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    if ((ret = write_tag(tag_header, sizeof(tag_header), data, size)) != ERROR_SUCCESS)
+    {
+        if (!IsClientGracefullyClose(ret))
+        {
+            rs_error("write flv audio tag failed.ret=%d", ret);
+        }
+        return ret;
+    }
+    return ret;
+}
+
+int Encoder::WriteVideo(int64_t timestamp, char *data, int size)
+{
+    int ret = ERROR_SUCCESS;
+
+    char tag_header[FLV_TAG_HEADER_SIZE];
+    if ((ret = write_tag_header_to_cache((char)TagType::VIDEO, size, timestamp, tag_header)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    if ((ret = write_tag(tag_header, sizeof(tag_header), data, size)) != ERROR_SUCCESS)
+    {
+        if (!IsClientGracefullyClose(ret))
+        {
+            rs_error("write flv video tag failed.ret=%d", ret);
+        }
+        return ret;
+    }
+    return ret;
+}
+
+int Encoder::SizeTag(int data_size)
+{
+    return FLV_TAG_HEADER_SIZE + data_size + FLV_PREVIOUS_TAG_SIZE;
+}
+
+int Encoder::WriteTags(rtmp::SharedPtrMessage **msgs, int count)
+{
+    int ret = ERROR_SUCCESS;
+
+    int nb_iovss = 3 * count;
+    iovec *iovss = iovss_cache_;
+
+    if (nb_iovss_cache_ < nb_iovss)
+    {
+        rs_freep(iovss_cache_);
+        nb_iovss_cache_ = nb_iovss;
+        iovss_cache_ = iovss = new iovec[nb_iovss];
+    }
+
+    char *cache = tag_headers_;
+    if (nb_tag_headers_ < count)
+    {
+        rs_freepa(tag_headers_);
+        nb_tag_headers_ = count;
+        tag_headers_ = cache = new char(FLV_TAG_HEADER_SIZE * count);
+    }
+
+    char *pts = ppts_;
+    if (nb_ppts_ < count)
+    {
+        rs_freepa(ppts_);
+        nb_ppts_ = count;
+        pts = ppts_ = new char[FLV_PREVIOUS_TAG_SIZE * count];
+    }
+
+    iovec *iovs = iovss;
+    for (int i = 0; i < count; i++)
+    {
+        rtmp::SharedPtrMessage *msg = msgs[i];
+        if (msg->IsAudio())
+        {
+            if ((ret = write_tag_header_to_cache(TagType::AUDIO, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
+            {
+                return ret;
+            }
+        }
+        else if (msg->IsVideo())
+        {
+            if ((ret = write_tag_header_to_cache(TagType::VIDEO, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
+            {
+                return ret;
+            }
+        }
+        else
+        {
+            if ((ret = write_tag_header_to_cache(TagType::SCRIPT, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
+            {
+                return ret;
+            }
+        }
+
+        if ((ret = write_previous_tag_size_to_cache(FLV_TAG_HEADER_SIZE + msg->size, pts)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        iovs[0].iov_base = cache;
+        iovs[0].iov_len = FLV_TAG_HEADER_SIZE;
+        iovs[1].iov_base = msg->payload;
+        iovs[1].iov_len = msg->size;
+        iovs[2].iov_base = pts;
+        iovs[2].iov_len = FLV_PREVIOUS_TAG_SIZE;
+
+        cache += FLV_TAG_HEADER_SIZE;
+        pts += FLV_PREVIOUS_TAG_SIZE;
+        iovs += 3;
+    }
+    if ((ret = writer_->Writev(iovss, nb_iovss, nullptr)) != ERROR_SUCCESS)
+    {
+        if (!IsClientGracefullyClose(ret))
+        {
+            rs_error("write flv tags failed. ret=%d", ret);
+        }
+        return ret;
+    }
+    return ret;
+
+}
 
 
 } // flv 
