@@ -4,8 +4,16 @@
 #include <common/connection.hpp>
 #include <protocol/rtmp_stack.hpp>
 
+
+class Dvr;
+
+
 namespace rtmp
 {
+
+
+class Source;
+class MessageQueue;
 
 enum class JitterAlgorithm
 {
@@ -13,9 +21,6 @@ enum class JitterAlgorithm
     ZERO,
     OFF
 };
-
-class Source;
-class MessageQueue;
 
 class ISourceHandler
 {
@@ -151,6 +156,7 @@ public:
     virtual bool CanPublish(bool is_edge);
     virtual void OnConsumerDestory(Consumer *consumer);
     virtual int OnAudio(CommonMessage *msg);
+    virtual int OnDvrRequestSH();
 protected:
     static Source *Fetch(Request *r);
 
@@ -174,6 +180,7 @@ private:
     std::vector<Consumer *> consumers_;
     JitterAlgorithm jitter_algorithm_;
     MixQueue *mix_queue_;
+    Dvr *dvr_;
 };
 
 } //namespace rtmp

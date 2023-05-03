@@ -56,7 +56,7 @@ public:
     DvrPlan();
     virtual ~DvrPlan();
 public:
-    static DvrPlan *CreatePlan(const std::string $vhost);
+    static DvrPlan *CreatePlan(const std::string &vhost);
     virtual int Initialize(rtmp::Request *request);
     virtual int OnPublish() = 0;
     virtual void OnUnpublish() = 0;
@@ -81,6 +81,7 @@ public:
     DvrSegmentPlan();
     virtual ~DvrSegmentPlan();
 public:
+    virtual int Initialize(rtmp::Request *request) override;
     virtual int OnPublish() override;
     virtual void OnUnpublish() override;
     virtual int OnMetadata(rtmp::SharedPtrMessage *shared_metadata) override;

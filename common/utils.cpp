@@ -252,7 +252,7 @@ std::string Utils::BuildIndexPath(const std::string &template_path)
     return StringReplace(template_path, "[timestamp]", oss.str());
 }
 
-std::string Utils::BuildTimestampPath(const std::string &template_path, const std::string &format="%Y-%m-%d_%H-%M-%S")
+std::string Utils::BuildTimestampPath(const std::string &template_path, const std::string &format)
 {
     timeval tv;
     if (gettimeofday(&tv, nullptr) < 0)

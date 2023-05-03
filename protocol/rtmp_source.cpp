@@ -4,6 +4,9 @@
 #include <common/config.hpp>
 
 #include <common/file.hpp>
+#include <app/dvr.hpp>
+
+#include <sstream>
 
 #define MIX_CORRECT_PURE_AV 10
 
@@ -527,10 +530,12 @@ Source::Source() : request_(nullptr)
     cache_sh_video_ = nullptr;
     cache_sh_audio_ = nullptr;
     mix_queue_ = new MixQueue;
+    dvr_ = new Dvr;
 }
 
 Source::~Source()
 {
+    rs_freep(dvr_);
     rs_freep(mix_queue_);
     rs_freep(cache_sh_audio_);
     rs_freep(cache_sh_video_);
@@ -721,6 +726,12 @@ int Source::OnAudio(CommonMessage *msg)
 
     rs_freep(m);
 
+    return ret;
+}
+
+int Source::OnDvrRequestSH()
+{
+    int ret = ERROR_SUCCESS;
     return ret;
 }
 

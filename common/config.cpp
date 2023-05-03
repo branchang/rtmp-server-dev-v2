@@ -103,3 +103,13 @@ std::string Config::GetDvrPlan(const std::string &vhost)
 {
     return RS_CONFIG_NVR_PLAN_SEGMENT;
 }
+
+int Config::GetDvrDuration(const std::string &vhost)
+{
+    return 10;
+}
+
+bool Config::GetDvrEnabled(const std::string &vhost)
+{
+    return true;
+}

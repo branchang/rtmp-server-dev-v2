@@ -232,61 +232,6 @@ int FlvSegment::UpdateFlvMetadata()
 
 int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
 {
-
-    int ret = ERROR_SUCCESS;
-
-    if (!duration_offset_ || !filesize_offset_)
-    {
-        return ret;
-    }
-
-    int64_t cur = writer_->Tellg();
-
-    char *buf = new char[AMF0_LEN_NUMBER];
-    rs_auto_freea(char, buf);
-
-    BufferManager manager;
-    if ((ret = manager.Initialize(buf, AMF0_LEN_NUMBER)) != ERROR_SUCCESS)
-    {
-        return ret;
-    }
-
-    rtmp::AMF0Any *size = rtmp::AMF0Any::Number((double)cur);
-    rs_auto_free(rtmp::AMF0Any, size);
-
-    if ((ret = size->Write(&manager)) != ERROR_SUCCESS)
-    {
-        return ret;
-    }
-
-    writer_->Lseek(filesize_offset_);
-    if ((ret = writer_->Write(buf, AMF0_LEN_NUMBER, nullptr)) != ERROR_SUCCESS)
-    {
-        return ret;
-    }
-
-    rtmp::AMF0Any *dur = rtmp::AMF0Any::Number((double)duration_ / 1000.0);
-    rs_auto_free(rtmp::AMF0Any, dur);
-
-    manager.Skip(-1 * manager.Pos());
-    if ((ret = dur->Write(&manager)) != ERROR_SUCCESS)
-    {
-        return ret;
-    }
-
-    writer_->Lseek(duration_offset_);
-    if ((ret = writer_->Write(buf, AMF0_LEN_NUMBER, nullptr)) != ERROR_SUCCESS)
-    {
-        return ret;
-    }
-
-    writer_->Lseek(cur);
-
-    return ret;
-}
-
-int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
-{
     int ret = ERROR_SUCCESS;
 
     rtmp::SharedPtrMessage *metadata = shared_metadata->Copy();
@@ -323,7 +268,8 @@ int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
     obj->Set("filesize", nullptr);
     obj->Set("duration", nullptr);
 
-    obj->Set("service", rtmp::AMF0Any::String(SIG_RS_SERVER));
+    // TODO 
+    // obj->Set("service", rtmp::AMF0Any::String(SIG_RS_SERVER));
     obj->Set("filesize", rtmp::AMF0Any::Number(0));
     obj->Set("duration", rtmp::AMF0Any::Number(0));
 
@@ -568,11 +514,11 @@ DvrPlan *DvrPlan::CreatePlan(const std::string &vhost)
 
     if (rs_config_dvr_is_plan_segment((plan)))
     {
-        return DvrSegmentPlan;
+        return new DvrSegmentPlan;
     }
     else if (rs_config_dvr_is_plan_append(plan))
     {
-        return DvrAppendPlan;
+        return new DvrAppendPlan;
     }
     else if (rs_config_dvr_is_plan_session(plan))
     {
@@ -606,7 +552,7 @@ int DvrSegmentPlan::Initialize(rtmp::Request *request)
         return ret;
     }
 
-    segment_duration_ = _cionfig->GetDvrDuration(request->vhost);
+    segment_duration_ = _config->GetDvrDuration(request->vhost);
     segment_duration_ *= 1000;
     return ret;
 }
@@ -657,7 +603,90 @@ int DvrSegmentPlan::OnMetadata(rtmp::SharedPtrMessage *shared_metadata)
     return ret;
 }
 
-int DvrSegment
+int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (segment_duration_ <= 0 || !segment_->IsOverflow(segment_duration_))
+    {
+        return ret;
+    }
+
+    if (_config->GetDvrWaitKeyFrame(request_->vhost))
+    {
+        //sometime we only has audio
+        if (msg->IsVideo())
+        {
+            char *payload = msg->payload;
+            int size = msg->size;
+            bool is_keyframe = flv::Codec::IsH264(payload, size) && flv::Codec::IsKeyFrame(payload, size) && !flv::Codec::IsVideoSeqenceHeader(payload, size);
+            if (!is_keyframe)
+            {
+                return ret;
+            }
+        }
+    }
+
+    if ((ret = segment_->Close()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if ((ret = segment_->Open()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (metadata_ && (ret = DvrPlan::OnMetadata(metadata_)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (sh_video_ && (ret = DvrPlan::OnVideo(sh_video_)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (sh_audio_ && (ret = DvrPlan::OnAudio(sh_audio_)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    return ret;
+}
+
+int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *share_audio)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = update_duration(share_audio)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if ((ret = DvrPlan::OnAudio(share_audio)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
+int DvrSegmentPlan::OnVideo(rtmp::SharedPtrMessage *share_video)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = update_duration(share_video)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if ((ret = DvrPlan::OnVideo(share_video)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    return ret;
+}
 
 DvrAppendPlan::DvrAppendPlan()
 {
@@ -691,10 +720,91 @@ DvrSessionPlan::~DvrSessionPlan()
 
 int DvrSessionPlan::OnPublish()
 {
-
+    int ret = ERROR_SUCCESS;
+    return ret;
 }
 
 void DvrSessionPlan::OnUnpublish()
 {
 
 }
+
+
+Dvr::Dvr()
+{
+    source_ = nullptr;
+    plan_ = nullptr;
+}
+
+Dvr::~Dvr()
+{
+    rs_freep(plan_);
+}
+
+int Dvr::Initialize(rtmp::Source *source, rtmp::Request *request)
+{
+    int ret = ERROR_SUCCESS;
+    rs_freep(plan_);
+
+    plan_ = DvrPlan::CreatePlan(request->vhost);
+    if ((ret = plan_->Initialize(request)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    source_ = source;
+    if ((ret = source->OnDvrRequestSH()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
+int Dvr::OnPublish(rtmp::Request *request)
+{
+    int ret = ERROR_SUCCESS;
+    if ((ret = plan_->OnPublish()) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    return ret;
+}
+
+void Dvr::OnUnpublish()
+{
+    plan_->OnUnpublish();
+}
+
+int Dvr::OnMetadata(rtmp::SharedPtrMessage *shared_metadata)
+{
+    int ret =  ERROR_SUCCESS;
+    if ((ret = plan_->OnMetadata(shared_metadata)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    return ret;
+}
+
+int Dvr::OnAudio(rtmp::SharedPtrMessage *share_audio)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = plan_->OnAudio(share_audio)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    return ret;
+}
+
+int Dvr::OnVideo(rtmp::SharedPtrMessage *shared_video)
+{
+    int ret = ERROR_SUCCESS;
+    if ((ret = plan_->OnVideo(shared_video)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
