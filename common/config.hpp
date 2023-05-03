@@ -3,6 +3,25 @@
 
 #include <common/reload.hpp>
 
+#define RS_CONFIG_NVR_PLAN_SESSION "session"
+#define RS_CONFIG_NVR_PLAN_APPEND "append"
+#define RS_CONFIG_NVR_PLAN_SEGMENT "segment"
+
+inline bool rs_config_dvr_is_plan_segment(const std::string &plan)
+{
+    return plan == RS_CONFIG_NVR_PLAN_SEGMENT;
+}
+
+inline bool rs_config_dvr_is_plan_append(const std::string &plan)
+{
+    return plan == RS_CONFIG_NVR_PLAN_APPEND;
+}
+
+inline bool rs_config_dvr_is_plan_session(const std::string &plan)
+{
+    return plan == RS_CONFIG_NVR_PLAN_SESSION;
+}
+
 class Config
 {
 public:
@@ -27,6 +46,8 @@ public:
     virtual int GetDvrTimeJitter(const std::string &vhost);
     virtual std::string GetDvrPath(const std::string &vhost);
     virtual bool GetUTCTime();
+    virtual bool GetDvrWaitKeyFrame(const std::string &vhost);
+    virtual std::string GetDvrPlan(const std::string &vhost);
 };
 
 extern Config *_config;

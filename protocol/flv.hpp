@@ -22,7 +22,7 @@ enum TagType
     AUDIO = 8,
     VIDEO = 9,
     SCRIPT = 18,
-    UNKNOW = 0
+    // UNKNOW = 0
 };
 
 class Encoder
@@ -158,7 +158,7 @@ enum class AACObjectType
     MAIN = 1,
     LC = 2,
     SSR = 3,
-    // LC + SBR 
+    // LC + SBR
     HE =4,
     // LC + SBR + PS
     HEV2 = 5
@@ -211,11 +211,14 @@ public:
 public:
     static bool IsVideoSeqenceHeader(char* data, int size);
     static bool IsAudioSeqenceHeader(char* data, int size);
+    static bool IsH264(char *data, int size);
+    static bool IsAAC(char *data, int size);
+    static bool IsKeyFrame(char *data, int size);
     int DemuxAudio(char *data, int size, CodecSample *sample);
 
 private:
-    static bool is_h264(char *data, int size);
-    static bool is_aac(char *data, int size);
+    // static bool is_h264(char *data, int size);
+    // static bool is_aac(char *data, int size);
     int aac_sequence_header_demux(char *data, int size);
     bool is_aac_codec_ok();
 public:

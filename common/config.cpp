@@ -93,3 +93,13 @@ bool Config::GetUTCTime()
 {
     return false;
 }
+
+bool Config::GetDvrWaitKeyFrame(const std::string &vhost)
+{
+    return true;
+}
+
+std::string Config::GetDvrPlan(const std::string &vhost)
+{
+    return RS_CONFIG_NVR_PLAN_SEGMENT;
+}

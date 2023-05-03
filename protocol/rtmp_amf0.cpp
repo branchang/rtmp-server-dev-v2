@@ -270,6 +270,16 @@ bool AMF0Any::IsNumber()
     return marker == RTMP_AMF0_NUMBER;
 }
 
+AMF0EcmaArray *AMF0Any::ToEcmaArray()
+{
+    return dynamic_cast<AMF0EcmaArray *>(this);
+}
+
+bool AMF0Any::IsEcmaArray()
+{
+    return marker == RTMP_AMF0_ECMA_ARRAY;
+}
+
 AMF0Object *AMF0Any::Object()
 {
     return new AMF0Object;
@@ -599,6 +609,10 @@ void AMF0EcmaArray::Clear()
     properties_->Clear();
 }
 
+int AMF0EcmaArray::Count()
+{
+    return properties_->Count();
+}
 
 int AMF0EcmaArray::Read(BufferManager *manager)
 {

@@ -129,7 +129,7 @@ Codec::~Codec()
 {
 }
 
-bool Codec::is_h264(char *data, int size)
+bool Codec::IsH264(char *data, int size)
 {
     if (size < 1)
     {
@@ -141,7 +141,7 @@ bool Codec::is_h264(char *data, int size)
     return codec_id == (char)VideoCodecType::AVC;
 }
 
-bool Codec::is_aac(char *data, int size)
+bool Codec::IsAAC(char *data, int size)
 {
     if (size < 1)
     {
@@ -153,9 +153,20 @@ bool Codec::is_aac(char *data, int size)
     return codec_id == (char)AudioCodecType::AAC;
 }
 
+bool Codec::IsKeyFrame(char *data, int size)
+{
+    if (size < 1)
+    {
+        return false;
+    }
+    char frame_type = data[0];
+    frame_type = (frame_type >> 4) & 0x0F;
+    return frame_type == (char)VideoFrameType::KEY_FRAME;
+}
+
 bool Codec::IsVideoSeqenceHeader(char *data, int size)
 {
-    if (!is_h264(data, size))
+    if (!IsH264(data, size))
     {
         return false;
     }
@@ -176,7 +187,7 @@ bool Codec::IsVideoSeqenceHeader(char *data, int size)
 
 bool Codec::IsAudioSeqenceHeader(char *data, int size)
 {
-    if (!is_aac(data, size))
+    if (!IsAAC(data, size))
     {
         return false;
     }
@@ -410,7 +421,7 @@ int Encoder::WriteFlvHeader()
     {
         return ret;
     }
-    
+
     return ret;
 }
 
@@ -482,16 +493,16 @@ int Encoder::write_tag(char *header, int header_size, char *tag, int tag_size)
     iovs[1].iov_len = tag_size;
     iovs[2].iov_base = pre_size;
     iovs[2].iov_len = FLV_PREVIOUS_TAG_SIZE;
-    
+
     if ((ret = writer_->Writev(iovs, 3, nullptr)) != ERROR_SUCCESS)
     {
         if (!IsClientGracefullyClose(ret))
         {
             rs_error("write flv tag failed.ret=%d", ret);
         }
-        return ret; 
+        return ret;
     }
-    return ret; 
+    return ret;
 }
 
 int Encoder::WriteMetadata(char *data, int size)
@@ -644,4 +655,4 @@ int Encoder::WriteTags(rtmp::SharedPtrMessage **msgs, int count)
 }
 
 
-} // flv 
+} // flv
