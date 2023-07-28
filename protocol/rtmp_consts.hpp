@@ -72,6 +72,10 @@
 #define RTMP_AMF0_COMMAND_CREATE_STREAM "createStream"
 #define RTMP_AMF0_COMMAND_ON_STATUS "onStatus"
 #define RTMP_AMF0_COMMAND_ERROR "error"
+#define RTMP_AMF0_COMMAND_ON_FC_PUBLISH "onFCPublish"
+#define RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH "onFCUnpublish"
+#define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
+#define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
 
 
 //amf0 marker

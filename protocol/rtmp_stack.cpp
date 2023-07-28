@@ -69,11 +69,12 @@ static int chunk_header_c0(int perfer_cid, uint32_t timestamp, int32_t payload_l
 
     *p++ = message_type;
 
+    // little-endian
     pp = (char *)&stream_id;
-    *p++ = pp[3];
-    *p++ = pp[2];
-    *p++ = pp[1];
     *p++ = pp[0];
+    *p++ = pp[1];
+    *p++ = pp[2];
+    *p++ = pp[3];
 
     if (timestamp >= RTMP_EXTENDED_TIMESTAMPE)
     {
@@ -177,7 +178,12 @@ IMessageHandler::~IMessageHandler()
 
 MessageHeader::MessageHeader()
 {
-
+    timestamp_delta = 0;
+    payload_length = 0;
+    message_type = 0;
+    stream_id = 0;
+    timestamp = 0;
+    perfer_cid = 0;
 }
 
 MessageHeader::~MessageHeader()
@@ -1758,6 +1764,90 @@ int OnStatusCallPacket::EncodePacket(BufferManager *manager)
     return ret;
 }
 
+OnMetadataPacket::OnMetadataPacket()
+{
+    name = RTMP_AMF0_COMMAND_ON_METADATA;
+    metadata = AMF0Any::Object();
+}
+
+OnMetadataPacket::~OnMetadataPacket()
+{
+    rs_freep(metadata);
+}
+
+int OnMetadataPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION2;
+}
+
+int OnMetadataPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_DATA;
+}
+
+int OnMetadataPacket::GetSize()
+{
+    return AMF0_LEN_STR(name) + AMF0_LEN_OBJECT(metadata);
+}
+
+int OnMetadataPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    return ret;
+}
+
+int OnMetadataPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0ReadString(manager, name)))
+    {
+        rs_error("decode on_metadata message command name failed. ret = %d", ret);
+        return ret;
+    }
+
+    if (name == RTMP_AMF0_COMMAND_SET_DATAFRAME)
+    {
+        if ((ret = AMF0ReadString(manager, name)) != ERROR_SUCCESS)
+        {
+            rs_error("decode on_metadata message command name failed. ret = %d", ret);
+            return ret;
+        }
+    }
+    // TODO
+    if (name != RTMP_AMF0_COMMAND_ON_METADATA)
+    {
+        ret = ERROR_RTMP_AMF0_DECODE;
+        rs_error("check on_metadata message command name failed.require=%s, actual=%s, ret=%d",
+                RTMP_AMF0_COMMAND_ON_METADATA, name.c_str(), ret);
+        return ret;
+    }
+
+    AMF0Any *any = nullptr;
+    if ((ret = AMF0ReadAny(manager, &any)) != ERROR_SUCCESS)
+    {
+        rs_error("decode on_metadata message data failed, ret=%d", ret);
+    }
+
+    if (any->IsObject())
+    {
+        rs_freep(metadata);
+        metadata = any->ToObject();
+        return ret;
+    }
+
+    rs_auto_free(AMF0Any, any);
+    if (any->IsEcmaArray())
+    {
+        AMF0EcmaArray *arr = any->ToEcmaArray();
+        for (int i = 0; i < arr->Count(); i++)
+        {
+            metadata->Set(arr->KeyAt(i), arr->ValueAt(i)->Copy());
+        }
+    }
+
+    return ret;
+}
 
 
 
@@ -2345,7 +2435,7 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
             {
                 ret = ERROR_RTMP_NO_REQUEST;
                 rs_error("decode amf0 request failed."
-                            "request_name=%s, transacation_id=%d, ret=%d", 
+                            "request_name=%s, transacation_id=%d, ret=%d",
                             request_name.c_str(), transaction_id, ret);
                 return ret;
             }
@@ -2377,6 +2467,11 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
         {
             rs_verbose("decode amf0 command message()");
             *ppacket = packet = new PublishPacket;
+            return packet->Decode(manager);
+        }
+        else if (command == RTMP_AMF0_COMMAND_ON_METADATA || command == RTMP_AMF0_COMMAND_SET_DATAFRAME)
+        {
+            *ppacket = packet = new OnMetadataPacket;
             return packet->Decode(manager);
         }
         else

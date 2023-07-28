@@ -216,6 +216,28 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
 
     }
 
+    if (msg->header.IsAMF0Data() || msg->header.IsAMF3Data())
+    {
+        rtmp::Packet *packet = nullptr;
+        if ((ret = rtmp_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+        {
+            rs_error("decode onMetaData message failed, ret=%d", ret);
+            return ret;
+        }
+
+        rs_auto_free(rtmp::Packet, packet);
+        if (dynamic_cast<rtmp::OnMetadataPacket *>(packet))
+        {
+            rtmp::OnMetadataPacket *pkt = dynamic_cast<rtmp::OnMetadataPacket *>(packet);
+            if ((ret = source->OnMetadata(msg, pkt)) != ERROR_SUCCESS)
+            {
+                rs_error("source process on_metadata message failed,ret=%d", ret);
+                return ret;
+            }
+            return ret;
+        }
+    }
+
     return ret;
 }
 

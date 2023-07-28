@@ -729,6 +729,13 @@ int Source::OnAudio(CommonMessage *msg)
     return ret;
 }
 
+int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
+{
+    int ret = ERROR_SUCCESS;
+
+    return ret;
+}
+
 int Source::OnDvrRequestSH()
 {
     int ret = ERROR_SUCCESS;
