@@ -222,6 +222,25 @@ AMF0Any *UnsortHashTable::EnsurePropertyNumber(const std::string &key)
     return value;
 }
 
+void UnsortHashTable::Remove(const std::string &key)
+{
+    std::vector<AMF0ObjectPropertyType>::iterator it;
+    for (it = properties_.begin(); it != properties_.end();)
+    {
+        std::string name = it->first;
+        AMF0Any *any = it->second;
+
+        if (key == name)
+        {
+            rs_freep(any);
+            it = properties_.erase(it);
+        }
+        else
+        {
+            it++;
+        }
+    }
+}
 
 
 
@@ -1187,6 +1206,11 @@ AMF0Any *AMF0Object::Copy()
     AMF0Object *copy = new AMF0Object;
     copy->properties_->Copy(properties_);
     return copy;
+}
+
+void AMF0Object::Remove(const std::string &key)
+{
+    properties_->Remove(key);
 }
 
 int AMF0Any::Discovery(BufferManager *manager, AMF0Any **ppvalue)

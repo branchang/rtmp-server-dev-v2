@@ -5,6 +5,7 @@
 #include <protocol/rtmp_stack.hpp>
 
 
+
 class Dvr;
 
 
@@ -156,7 +157,10 @@ public:
     virtual bool CanPublish(bool is_edge);
     virtual void OnConsumerDestory(Consumer *consumer);
     virtual int OnAudio(CommonMessage *msg);
+    virtual int OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt);
     virtual int OnDvrRequestSH();
+    virtual int OnPublish();
+    virtual void OnUnpublish();
 protected:
     static Source *Fetch(Request *r);
 

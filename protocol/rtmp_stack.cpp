@@ -1793,6 +1793,17 @@ int OnMetadataPacket::GetSize()
 int OnMetadataPacket::EncodePacket(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
+    if ((ret == AMF0WriteString(manager, name)) != ERROR_SUCCESS)
+    {
+        rs_error("encode name failed, ret=%d", ret);
+        return ret;
+    }
+
+    if ((ret = metadata->Write(manager)) != ERROR_SUCCESS)
+    {
+        rs_error("encode metadata failed, ret=%d", ret);
+        return ret;
+    }
     return ret;
 }
 
