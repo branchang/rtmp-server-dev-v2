@@ -606,21 +606,21 @@ int Encoder::WriteTags(rtmp::SharedPtrMessage **msgs, int count)
         rtmp::SharedPtrMessage *msg = msgs[i];
         if (msg->IsAudio())
         {
-            if ((ret = write_tag_header_to_cache(TagType::AUDIO, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
+            if ((ret = write_tag_header_to_cache((char)TagType::AUDIO, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
             {
                 return ret;
             }
         }
         else if (msg->IsVideo())
         {
-            if ((ret = write_tag_header_to_cache(TagType::VIDEO, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
+            if ((ret = write_tag_header_to_cache((char)TagType::VIDEO, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
             {
                 return ret;
             }
         }
         else
         {
-            if ((ret = write_tag_header_to_cache(TagType::SCRIPT, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
+            if ((ret = write_tag_header_to_cache((char)TagType::SCRIPT, msg->size, msg->timestamp, cache)) != ERROR_SUCCESS)
             {
                 return ret;
             }

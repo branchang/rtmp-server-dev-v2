@@ -626,6 +626,12 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         }
     }
 
+    if (is_sequence_header)
+    {
+        rs_freep(cache_sh_video_);
+        cache_sh_video_ = msg->Copy();
+    }
+
     return ret;
 }
 
@@ -759,13 +765,13 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
     {
         oss << ", height=" << (int)prop->ToNumber();
     }
-    if ((prop = pkt->metadata->EnsurePropertyNumber("videocodecid")) != nullptr)
+    if ((prop = pkt->metadata->EnsurePropertyString("videocodecid")) != nullptr)
     {
-        oss << ", vcodec=" << (int)prop->ToNumber();
+        oss << ", vcodec=" << prop->ToString();
     }
-    if ((prop = pkt->metadata->EnsurePropertyNumber("audiocodecid")) != nullptr)
+    if ((prop = pkt->metadata->EnsurePropertyString("audiocodecid")) != nullptr)
     {
-        oss << ", acodec=" << (int)prop->ToNumber();
+        oss << ", acodec=" << prop->ToString();
     }
 
     rs_info("got metadata%s", oss.str().c_str());
