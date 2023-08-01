@@ -27,7 +27,7 @@ static int amf0_write_utf8(BufferManager *manager, const std::string &value)
 
     if (!manager->Require(2))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write string length failed, ret=%d", ret);
         return ret;
     }
@@ -43,7 +43,7 @@ static int amf0_write_utf8(BufferManager *manager, const std::string &value)
 
     if (!manager->Require(value.length()))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write string data failed, ret=%d", ret);
         return ret;
     }
@@ -399,7 +399,7 @@ int AMF0ObjectEOF::Write(BufferManager *manager)
 
     if (!manager->Require(2))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write object eof value failed, ret=%d", ret);
         return ret;
     }
@@ -408,7 +408,7 @@ int AMF0ObjectEOF::Write(BufferManager *manager)
     rs_verbose("amf0 write object eof value success");
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write object eof marker failed,ret=%d", ret);
         return ret;
     }
@@ -705,7 +705,7 @@ int AMF0EcmaArray::Write(BufferManager *manager)
 
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write ecma array marker failed, ret=%d", ret);
         return ret;
     }
@@ -715,7 +715,7 @@ int AMF0EcmaArray::Write(BufferManager *manager)
 
     if (!manager->Require(4))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write ecma array count failed, ret=%d", ret);
         return ret;
     }
@@ -856,7 +856,7 @@ int AMF0StrictArray::Write(BufferManager *manager)
 
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write strict array marker failed, ret=%d", ret);
         return ret;
     }
@@ -864,7 +864,7 @@ int AMF0StrictArray::Write(BufferManager *manager)
     manager->Write1Bytes(RTMP_AMF0_STRICT_ARRAY);
     if ((ret = manager->Require(4)) != ERROR_SUCCESS)
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write strict array count failed=%d", ret);
         return ret;
     }
@@ -973,7 +973,7 @@ int AMF0Date::Write(BufferManager *manager)
     int ret = ERROR_SUCCESS;
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write date marker failed, ret=%d", ret);
         return ret;
     }
@@ -983,7 +983,7 @@ int AMF0Date::Write(BufferManager *manager)
 
     if (!manager->Require(8))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write date_value failed,ret=%d",ret);
         return ret;
     }
@@ -993,7 +993,7 @@ int AMF0Date::Write(BufferManager *manager)
 
     if (!manager->Require(2))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 wirte date_value failed, ret=%d", ret);
         return ret;
 
@@ -1144,7 +1144,7 @@ int AMF0Object::Write(BufferManager *manager)
     int ret = ERROR_SUCCESS;
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 encode object marker failed,ret=%d", ret);
         return ret;
     }
@@ -1156,13 +1156,13 @@ int AMF0Object::Write(BufferManager *manager)
 
         if ((ret = amf0_write_utf8(manager, property_name)) != ERROR_SUCCESS)
         {
-            ret = ERROR_RTMP_AMF0_ENCODE;
+            ret = ERROR_PROTOCOL_AMF0_ENCODE;
             rs_error("amf0 encode object property_name failed, ret=%d", ret);
             return ret;
         }
         if ((ret = property_value->Write(manager)) != ERROR_SUCCESS)
         {
-            ret = ERROR_RTMP_AMF0_ENCODE;
+            ret = ERROR_PROTOCOL_AMF0_ENCODE;
             rs_error("amf0 encode object property_value failed, ret=%d", ret);
             return ret;
         }
@@ -1172,7 +1172,7 @@ int AMF0Object::Write(BufferManager *manager)
     AMF0ObjectEOF eof;
     if ((ret = eof.Write(manager)) != ERROR_SUCCESS)
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 encode object eof failed,ret=%d", ret);
         return ret;
     }
@@ -1279,7 +1279,7 @@ int AMF0Any::Discovery(BufferManager *manager, AMF0Any **ppvalue)
         default:
         {
             // case RTMP_AMF0_INVALID
-            ret = ERROR_RTMP_AMF0_INVALID;
+            ret = ERROR_PROTOCOL_AMF0_INVALID;
             rs_error("invalid amf0 message type, marker=%#x, ret=%d", marker, ret);
             return ret;
         }
@@ -1389,7 +1389,7 @@ int AMF0WriteNumber(BufferManager *manager, double value)
     int ret = ERROR_SUCCESS;
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write number marker failed,ret=%d", ret);
         return ret;
     }
@@ -1397,7 +1397,7 @@ int AMF0WriteNumber(BufferManager *manager, double value)
     rs_verbose("amf0 write number marker success");
     if (!manager->Require(8))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write number data failed, ret=%d", ret);
         return ret;
     }
@@ -1417,7 +1417,7 @@ static int amf0_wirte_utf8(BufferManager *manager, const std::string &value)
 
     if (!manager->Require(2))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write string length failed, ret=%d", ret);
         return ret;
     }
@@ -1433,7 +1433,7 @@ static int amf0_wirte_utf8(BufferManager *manager, const std::string &value)
 
     if (!manager->Require(value.length()))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write string data failed,ret=%d", ret);
         return ret;
     }
@@ -1452,7 +1452,7 @@ int AMF0WriteString(BufferManager *manager, const std::string &value)
 
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write string marker failed,ret=%d", ret);
         return ret;
     }
@@ -1507,7 +1507,7 @@ int AMF0WriteBoolean(BufferManager *manager, bool value)
     int ret = ERROR_SUCCESS;
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write bool marker failed, ret=%d", ret);
         return ret;
     }
@@ -1516,7 +1516,7 @@ int AMF0WriteBoolean(BufferManager *manager, bool value)
     rs_verbose("amf0 write bool marker success");
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write bool value failed,ret=%d", ret);
         return ret;
     }
@@ -1569,7 +1569,7 @@ int AMF0WriteNull(BufferManager *manager)
 
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write null marker failed, ret=%d", ret);
         return ret;
     }
@@ -1612,7 +1612,7 @@ int AMF0WriteUndefined(BufferManager *manager)
     int ret = ERROR_SUCCESS;
     if (!manager->Require(1))
     {
-        ret = ERROR_RTMP_AMF0_ENCODE;
+        ret = ERROR_PROTOCOL_AMF0_ENCODE;
         rs_error("amf0 write undefined marker failed, ret=%d", ret);
         return ret;
     }
