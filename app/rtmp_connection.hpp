@@ -37,6 +37,7 @@ private:
     int process_publish_message(rtmp::Source *source, rtmp::CommonMessage *msg, bool is_edge);
     int do_publish(rtmp::Source *source, PublishRecvThread *recv_thread);
     void set_socket_option();
+    int acquire_publish(rtmp::Source *source, bool is_edge);
 
 private:
     Server *server_;
