@@ -7,25 +7,25 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-FileReader::FileReader()
-{
+// FileReader::FileReader()
+// {
 
-}
+// }
 
-FileReader::~FileReader()
-{
+// FileReader::~FileReader()
+// {
 
-}
+// }
 
-int32_t FileReader::Open(const std::string &p)
-{
-    int32_t ret = ERROR_SUCCESS;
-    if (fd_ > 0)
-    {
-        return ERROR_SYSTEM_FILE_ALREADY_OPENED;
-    }
-    return ret;
-}
+// int32_t FileReader::Open(const std::string &p)
+// {
+//     int32_t ret = ERROR_SUCCESS;
+//     if (fd_ > 0)
+//     {
+//         return ERROR_SYSTEM_FILE_ALREADY_OPENED;
+//     }
+//     return ret;
+// }
 
 FileWriter::FileWriter()
 {
@@ -88,4 +88,46 @@ bool FileWriter::IsOpen()
 void FileWriter::Lseek(int64_t offset)
 {
     ::lseek(st_netfd_fileno(stfd_), (off_t)offset, SEEK_SET);
+}
+
+int64_t FileWriter::Tellg()
+{
+    return ::lseek(st_netfd_fileno(stfd_), 0, SEEK_CUR);
+}
+
+int FileWriter::Write(void* buf, size_t count, ssize_t* pnwrite)
+{
+
+    int ret = ERROR_SUCCESS;
+    ssize_t nwrite = 0;
+
+    if ((nwrite = st_write(stfd_, buf, count, ST_UTIME_NO_TIMEOUT)) < 0) {
+        ret = ERROR_SYSTEM_FILE_WRITE;
+        rs_error("write to file %s failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (pnwrite) {
+        *pnwrite = nwrite;
+    }
+    return ret;
+
+}
+
+int FileWriter::Writev(iovec* iov, int iovcnt, ssize_t *pnwrite)
+{
+    int ret = ERROR_SUCCESS;
+    ssize_t nwrite = 0;
+
+    if ((nwrite = st_writev(stfd_, iov, iovcnt, ST_UTIME_NO_TIMEOUT)) < 0) {
+        ret = ERROR_SYSTEM_FILE_WRITE;
+        rs_error("writev to file %s failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (pnwrite) {
+        *pnwrite = nwrite;
+    }
+    return ret;
+
 }

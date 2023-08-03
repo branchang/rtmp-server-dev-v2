@@ -508,6 +508,11 @@ int DvrPlan::on_keyframe()
     return ERROR_SUCCESS;
 }
 
+int DvrPlan::on_reap_segment()
+{
+    return ERROR_SUCCESS;
+}
+
 DvrPlan *DvrPlan::CreatePlan(const std::string &vhost)
 {
     std::string plan = _config->GetDvrPath(vhost);

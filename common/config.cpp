@@ -114,7 +114,7 @@ bool Config::GetDvrEnabled(const std::string &vhost)
     return true;
 }
 
-bool GetATCAuto(const std::string &vhost)
+bool Config::GetATCAuto(const std::string &vhost)
 {
     return true;
 }
