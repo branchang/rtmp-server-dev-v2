@@ -157,6 +157,7 @@ public:
     std::string command_name;
     double transaction_id;
     std::string stream_name;
+    AMF0Any *command_object;
 };
 
 class FMLEStartResPacket : public Packet

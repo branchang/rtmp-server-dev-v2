@@ -268,8 +268,8 @@ int FlvSegment::WriteMetadata(rtmp::SharedPtrMessage *shared_metadata)
     obj->Set("filesize", nullptr);
     obj->Set("duration", nullptr);
 
-    // TODO 
-    // obj->Set("service", rtmp::AMF0Any::String(SIG_RS_SERVER));
+    // TODO
+    obj->Set("service", rtmp::AMF0Any::String(RS_SERVER));
     obj->Set("filesize", rtmp::AMF0Any::Number(0));
     obj->Set("duration", rtmp::AMF0Any::Number(0));
 

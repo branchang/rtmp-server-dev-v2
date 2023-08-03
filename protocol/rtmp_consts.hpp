@@ -15,10 +15,25 @@
 #define RTMP_DEFAULT_VHOST "__defaultVhost__"
 
 #define RTMP_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE 128
+#define RTMP_DEFALUT_CHUNK_SIZE 128
 #define RTMP_CONSTS_RTMP_MIN_CHUNK_SIZE 128
 #define RTMP_CONSTS_RTMP_MAX_CHUNK_SIZE 65535
 
 #define RTMP_CHUNK_STREAM_CHCAHE 16
+
+//rtmp timestamp_delta when extended timestamp enabled
+#define RTMP_EXTENDED_TIMESTAMP 0xffffffff
+//rtmp jitter duration
+#define RTMP_MAX_JITTER_MS 250
+#define RTMP_MAX_JITTER_MS_NEG -250
+#define RTMP_DEFALUT_FRAME_TIME_MS 10
+//the timeout to wait for client control message
+#define RTMP_PULSE_TIMEOUT_US (int64_t)(500 * 1000LL)
+//rtmp marge read small bytes
+#define RTMP_MR_SMALL_BYTES 4096
+//rtmp perf
+#define RTMP_PERF_MW_MSGS 128
+#define RTMP_MR_MSGS 128
 
 
 // rtmp fmt0 header size(max base header)
@@ -115,17 +130,5 @@
 #define AMF0_LEN_STRICT_ARR(a) ((a)->TotalSize())
 #define AMF0_LEN_ANY(a) ((a)->TotalSize())
 
-//rtmp perf
-#define  RTMP_PERF_MW_MSGS 128
-
-//rtmp jitter duration
-#define RTMP_MAX_JITTER_MS 250
-#define RTMP_MAX_JITTER_MS_NEG -250
-#define RTMP_DEFALUT_FRAME_TIME_MS 10
-
-//the timeout to wait for client control message
-#define RTMP_PULSE_TIMEOUT_US (int64_t)(500 * 1000LL)
-//rtmp marge read small bytes
-#define RTMP_MR_SMALL_BYTES 4096
 
 #endif

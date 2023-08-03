@@ -54,7 +54,7 @@ int Packet::Encode(int &psize, char*& ppayload)
     if ((ret = EncodePacket(&manager)) != ERROR_SUCCESS)
     {
         rs_error("encode the package failed, ret=%d", ret);
-        rs_freep(payload);
+        rs_freepa(payload);
         return ret;
     }
 
@@ -75,7 +75,7 @@ int Packet::EncodePacket(BufferManager *manager)
     return ERROR_SUCCESS;
 }
 
-SetChunkSizePacket::SetChunkSizePacket() : chunk_size(RTMP_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)
+SetChunkSizePacket::SetChunkSizePacket() : chunk_size(RTMP_DEFALUT_CHUNK_SIZE)
 {
 
 }
@@ -174,11 +174,11 @@ int ConnectAppPacket::Decode(BufferManager *manager)
 
     if (!manager->Empty())
     {
-        rs_freep(args);
 
         AMF0Any *p = nullptr;
         if ((ret=AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
         {
+            rs_freep(args);
             rs_error("amf0 decode connect args failed, ret=%d",ret);
             return ret;
         }
@@ -189,9 +189,9 @@ int ConnectAppPacket::Decode(BufferManager *manager)
             rs_freep(p);
         }
         else{
-            // rs_freep(args);
+            rs_freep(args);
             // args = p->ToObject();
-            rs_freep(command_object);
+            // rs_freep(command_object);
             command_object = p->ToObject();
         }
     }
@@ -311,6 +311,7 @@ int ConnectAppResPacket::Decode(BufferManager* manager)
         AMF0Any *p = nullptr;
         if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
         {
+            rs_freep(p);
             rs_error("amf0 decode connect properties failed, ret=%d", ret);
             return ret;
         }
@@ -474,6 +475,7 @@ FMLEStartPacket::FMLEStartPacket() : command_name(RTMP_AMF0_COMMAND_RELEASE_STRE
                                      transaction_id(0),
                                      stream_name("")
 {
+    command_object = AMF0Any::Null();
 
 }
 
@@ -519,11 +521,19 @@ int FMLEStartPacket::Decode(BufferManager *manager)
         return ret;
     }
 
-    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
     {
-        ret = ERROR_RTMP_AMF0_DECODE;
-        rs_error("amf0 decode FMLE start packet null failed, ret=%d", ret);
-        return ret;
+        AMF0Any* p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS) {
+            rs_freep(p);
+            rs_error(
+                "decode FMLE_start packet: amf0 read object failed. ret=%d",
+                ret);
+            return ret;
+        }
+        else {
+            rs_freep(command_object);
+            command_object = p;
+        }
     }
 
     if ((ret = AMF0ReadString(manager, stream_name)) != ERROR_SUCCESS)
@@ -533,6 +543,7 @@ int FMLEStartPacket::Decode(BufferManager *manager)
         return ret;
     }
 
+    rs_trace("decode FMLE_start packet success");
     return ret;
 }
 
@@ -642,6 +653,37 @@ int FMLEStartResPacket::Decode(BufferManager *manager)
         rs_error("amf0 decode FMLE start response packet undefined failed, ret=%d", ret);
         return ret;
     }
+
+    {
+        AMF0Any* p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS) {
+            rs_freep(p);
+            rs_error("decode FMLE_start response packet: amf0 read object "
+                    "failed. ret=%d",
+                    ret);
+            return ret;
+        }
+        else {
+            rs_freep(command_object);
+            command_object = p;
+        }
+    }
+    {
+        AMF0Any* p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS) {
+            rs_freep(p);
+            rs_error("decode FMLE_start response packet: amf0 read args "
+                    "failed. ret=%d",
+                    ret);
+            return ret;
+        }
+        else {
+            rs_freep(args);
+            args = p;
+        }
+    }
+
+    rs_trace("decode FMLE_start response packet success");
     return ret;
 }
 
@@ -732,10 +774,19 @@ int CreateStreamPacket::Decode(BufferManager *manager)
         return ret;
     }
 
-    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
     {
-        rs_error("amf0 decode createStream null failed, ret=%d", ret);
-        return ret;
+        AMF0Any* p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS) {
+            rs_freep(p);
+            rs_error(
+                "decode create_stream packet: amf0 read object failed. ret=%d",
+                ret);
+            return ret;
+        }
+        else {
+            rs_freep(command_object);
+            command_object = p;
+        }
     }
     return ret;
 
@@ -781,6 +832,42 @@ int CreateStreamResPacket::GetMessageType()
 int CreateStreamResPacket::Decode(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS){
+        rs_error("decode create_stream response packet. amf0 read command failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_RESULT) {
+        rs_error("decode create_stream response packet. amf0 read command failed. require=%s, actual=%s, ret=%d", RTMP_AMF0_COMMAND_RESULT,
+        command_name.empty() ? "[EMPTY]":command_name.c_str(),ret);
+        return ret;
+
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS) {
+        rs_error("decode create_stream response packet. amf0 read command failed. ret=%d", ret);
+        return ret;
+    }
+
+    {
+        AMF0Any* p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS) {
+            rs_freep(p);
+            rs_error("decode create_stream response packet. amf0 read object failed. ret=%d", ret);
+            return ret;
+        } else {
+            rs_freep(command_object);
+            command_object = p;
+        }
+    }
+
+    if ((ret = AMF0ReadNumber(manager, stream_id)) != ERROR_SUCCESS) {
+        rs_error("decode create_stream response packet. amf0 read stream_id failed. ret=%d", ret);
+        return ret;
+    }
+
+    rs_trace("decode create_stream response packet");
+
     return ret;
 }
 
@@ -874,6 +961,19 @@ int PublishPacket::Decode(BufferManager *manager)
     {
         rs_error("amf0 decode publish message null failed, ret=%d", ret);
         return ret;
+    }
+
+    {
+        AMF0Any* p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS) {
+            rs_freep(p);
+            rs_error("decode publish packet: amf0 read object failed. ret=%d",ret);
+            return ret;
+        }
+        else {
+            rs_freep(command_object);
+            command_object = p;
+        }
     }
 
     if ((ret = AMF0ReadString(manager, stream_name)) !=ERROR_SUCCESS)
@@ -1050,7 +1150,9 @@ int OnMetadataPacket::Decode(BufferManager *manager)
     AMF0Any *any = nullptr;
     if ((ret = AMF0ReadAny(manager, &any)) != ERROR_SUCCESS)
     {
+        rs_freep(any);
         rs_error("decode on_metadata message data failed, ret=%d", ret);
+        return ret;
     }
 
     if (any->IsObject())

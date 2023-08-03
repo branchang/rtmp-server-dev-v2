@@ -4,14 +4,10 @@
 #include <common/connection.hpp>
 #include <protocol/rtmp_stack.hpp>
 
-
-
 class Dvr;
-
 
 namespace rtmp
 {
-
 
 class Source;
 class MessageQueue;

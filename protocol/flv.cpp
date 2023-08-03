@@ -387,9 +387,9 @@ Encoder::Encoder()
 
 Encoder::~Encoder()
 {
-    rs_freep(iovss_cache_);
-    rs_freep(ppts_);
-    rs_freep(tag_headers_);
+    rs_freepa(iovss_cache_);
+    rs_freepa(ppts_);
+    rs_freepa(tag_headers_);
 }
 
 int Encoder::Initialize(FileWriter *writer)
