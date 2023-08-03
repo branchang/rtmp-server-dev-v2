@@ -57,6 +57,20 @@ public:
     MessageHeader header;
 };
 
+class ChunkStream
+{
+public:
+    ChunkStream(int cid);
+    virtual ~ChunkStream();
+public:
+    int cid;
+    char fmt;
+    CommonMessage *msg;
+    bool extended_timestamp;
+    int msg_count;
+    MessageHeader header;
+};
+
 struct SharedMesageHeader
 {
     int32_t payload_length;

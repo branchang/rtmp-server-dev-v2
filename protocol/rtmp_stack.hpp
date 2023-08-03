@@ -44,7 +44,6 @@ public:
 };
 
 
-
 enum class ConnType
 {
     UNKNOW = 0,
@@ -53,25 +52,9 @@ enum class ConnType
 };
 
 
-class ChunkStream
-{
-public:
-    ChunkStream(int cid);
-    virtual ~ChunkStream();
-public:
-    int cid;
-    char fmt;
-    CommonMessage *msg;
-    bool extended_timestamp;
-    int msg_count;
-    MessageHeader header;
-};
-
-
 class Client
 {
 };
-
 
 
 class Request

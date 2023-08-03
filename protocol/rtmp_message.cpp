@@ -223,6 +223,19 @@ void CommonMessage::CreatePlayload(int32_t size)
     rs_verbose("create payload for rtmp message,size=%d", size);
 }
 
+ChunkStream::ChunkStream(int cid) : cid(cid),
+                                    fmt(0),
+                                    msg(nullptr),
+                                    extended_timestamp(false),
+                                    msg_count(0)
+{
+
+}
+
+ChunkStream::~ChunkStream()
+{
+
+}
 
 SharedPtrMessage::SharedPtrMessage() : ptr_(nullptr)
 {

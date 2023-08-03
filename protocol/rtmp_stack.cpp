@@ -117,21 +117,6 @@ IMessageHandler::~IMessageHandler()
 
 
 
-ChunkStream::ChunkStream(int cid) : cid(cid),
-                                    fmt(0),
-                                    msg(nullptr),
-                                    extended_timestamp(false),
-                                    msg_count(0)
-{
-
-}
-
-ChunkStream::~ChunkStream()
-{
-
-}
-
-
 
 
 
