@@ -270,7 +270,7 @@ void Consumer::Wait(int nb_msgs, int duration)
     int duration_ms = queue_->Duration();
     bool match_min_msgs = queue_->Size() > mw_min_msgs_;
 
-    if (match_min_msgs && duration_ms > mw_min_msgs_)
+    if (match_min_msgs && duration_ms > mw_duration_)
     {
         return;
     }
