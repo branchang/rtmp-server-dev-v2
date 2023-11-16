@@ -46,6 +46,21 @@ private:
 
 };
 
+class BitBufferManager
+{
+public:
+    BitBufferManager();
+    virtual ~BitBufferManager();
+public:
+    virtual int Initialize(BufferManager *manager);
+    virtual bool Empty();
+    virtual int8_t ReadBit();
+private:
+    int8_t cb_;
+    uint8_t cb_left_;
+    BufferManager *manager_;
+};
+
 class FastBuffer
 {
 public:
