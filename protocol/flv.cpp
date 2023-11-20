@@ -182,7 +182,7 @@ bool Codec::IsVideoSeqenceHeader(char *data, int size)
     char packet_type = data[1];
 
     return frame_type == (char)VideoFrameType::KEY_FRAME &&
-            packet_type == (char)VIdeoPacketType::SEQUENCE_HEADER;
+            packet_type == (char)VideoPacketType::SEQUENCE_HEADER;
 }
 
 bool Codec::IsAudioSeqenceHeader(char *data, int size)
@@ -652,6 +652,206 @@ int Encoder::WriteTags(rtmp::SharedPtrMessage **msgs, int count)
     }
     return ret;
 
+}
+
+AVInfo::AVInfo()
+{
+}
+
+AVInfo::~AVInfo()
+{
+}
+
+int AVInfo::avc_demux_sequence_header(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+    avc_extra_size = manager->Size() - manager->Pos();
+
+    if (avc_extra_size > 0)
+    {
+        rs_freepa(avc_extra_data);
+        avc_extra_data = new char[avc_extra_size];
+        memcpy(avc_extra_data, manager->Data() + manager->Pos(), avc_extra_size);
+    }
+
+    if (!manager->Require(6))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    manager->Read1Bytes();
+    avc_profile = (AVCProfile)manager->Read1Bytes();
+    manager->Read1Bytes();
+    acv_level = (AVCLevel)manager->Read1Bytes();
+
+    int8_t length_size_minus_one = manager->Read1Bytes();
+    length_size_minus_one &= 0x03;
+
+    nalu_unit_length = length_size_minus_one;
+    if (nalu_unit_length == 2)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("sequence should never be 2.ret=%d", ret);
+        return ret;
+    }
+
+    if (!manager->Require(1))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    int8_t num_of_sps = manager->Read1Bytes();
+    num_of_sps &= 0x1f;
+    if (num_of_sps != 1)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    if (!manager->Require(2))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    sps_length = manager->Read2Bytes();
+    if (!manager->Require(sps_length))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    if (sps_length > 0)
+    {
+        rs_freepa(sps);
+        sps = new char[sps_length];
+        manager->ReadBytes(sps,sps_length);
+    }
+
+    if (!manager->Require(1))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    int8_t num_of_pps = manager->Read1Bytes();
+    num_of_pps &= 0x1f;
+
+    if (num_of_pps != 1)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    pps_length = manager->Read2Bytes();
+    if (!manager->Require(pps_length))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sequence header failed.ret=%d", ret);
+        return ret;
+    }
+
+    if (pps_length > 0)
+    {
+        rs_freepa(pps);
+        pps = new char[pps_length];
+        manager->ReadBytes(pps, pps_length);
+    }
+
+    return ret;
+}
+
+int AVInfo::avc_demux_sps()
+{
+    int ret = ERROR_SUCCESS;
+    if (!sps_length)
+    {
+        return ret;
+    }
+
+    return ret;
+}
+
+int AVInfo::AVCDemux(char *data, int size, CodecSample *sample)
+{
+    int ret = ERROR_SUCCESS;
+
+    sample->is_video = true;
+
+    if (!data || size <= 0)
+    {
+        return ret;
+    }
+
+    BufferManager manager;
+    if ((ret = manager.Initialize(data, size)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (!manager.Require(1))
+    {
+        ret = ERROR_DECODE_FLV_FAILED;
+        rs_error("decode frame_type failed. ret=%d", ret);
+        return ret;
+    }
+
+    int8_t frame_type = manager.Read1Bytes();
+    int8_t codec_id = frame_type & 0x0f;
+    frame_type = (frame_type >> 4) & 0x0f;
+
+    sample->frame_type = (VideoFrameType)frame_type;
+
+    if (sample->frame_type != VideoFrameType::VIDEO_INFO_FRAME)
+    {
+        rs_warn("ignore the info frame");
+        return ret;
+    }
+
+    if (codec_id != (int8_t)VideoCodecType::AVC);
+    {
+        ret = ERROR_DECODE_FLV_FAILED;
+        rs_error("only support h264/avc codec. actual=%d, ret=%d", codec_id, ret);
+        return ret;
+    }
+
+    video_codec_id = codec_id;
+    if (!manager.Require(4))
+    {
+        ret = ERROR_DECODE_FLV_FAILED;
+        rs_error("decode avc_packet_type failed. ret=%d", ret);
+        return ret;
+    }
+
+    int8_t  acv_packet_type = manager.Read1Bytes();
+    int32_t composition_time = manager.Read3Bytes();
+
+    sample->cts = composition_time;
+    sample->avc_packet_type = (VideoPacketType)acv_packet_type;
+
+    if (acv_packet_type == (int8_t)VideoPacketType::SEQUENCE_HEADER)
+    {
+
+    }
+    else if (acv_packet_type == (int8_t)VideoPacketType::NALU)
+    {
+
+    }
+    else
+    {
+        // ignore
+    }
+
+    return ret;
 }
 
 
