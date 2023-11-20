@@ -118,3 +118,8 @@ bool Config::GetATCAuto(const std::string &vhost)
 {
     return true;
 }
+
+bool Config::GetParseSPS(const std::string &vhost)
+{
+    return true;
+}
