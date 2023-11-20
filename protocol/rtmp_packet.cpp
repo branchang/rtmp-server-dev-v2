@@ -957,12 +957,6 @@ int PublishPacket::Decode(BufferManager *manager)
         return ret;
     }
 
-    if ((ret = AMF0ReadNull(manager)) != ERROR_SUCCESS)
-    {
-        rs_error("amf0 decode publish message null failed, ret=%d", ret);
-        return ret;
-    }
-
     {
         AMF0Any* p = nullptr;
         if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS) {
@@ -987,6 +981,7 @@ int PublishPacket::Decode(BufferManager *manager)
         rs_error("amf0 decode publish message type failed, ret=%d", ret);
         return ret;
     }
+    rs_trace("decode publish packet success");
 
     return ret;
 }

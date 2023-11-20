@@ -7,7 +7,6 @@
 namespace rtmp
 {
 
-
 int chunk_header_c0(int perfer_cid, uint32_t timestamp, int32_t payload_length,
                             int8_t message_type, int32_t stream_id, char *buf)
 {

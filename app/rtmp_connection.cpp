@@ -220,6 +220,15 @@ int RTMPConnection::process_publish_message(rtmp::Source *source, rtmp::CommonMe
 
     }
 
+    if (msg->header.IsVideo())
+    {
+        if ((ret = source->OnVideo(msg)) != ERROR_SUCCESS)
+        {
+            rs_error("source process video message failed. ret=%d", ret);
+            return ret;
+        }
+    }
+
     if (msg->header.IsAMF0Data() || msg->header.IsAMF3Data())
     {
         rtmp::Packet *packet = nullptr;

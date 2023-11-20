@@ -1252,6 +1252,11 @@ int AMF0Any::Discovery(BufferManager *manager, AMF0Any **ppvalue)
             *ppvalue = AMF0Any::Number();
             return ret;
         }
+        case RTMP_AMF0_NULL:
+        {
+            *ppvalue = AMF0Any::Null();
+            return ret;
+        }
         case RTMP_AMF0_UNDEFINED:
         {
             *ppvalue = AMF0Any::Undefined();
@@ -1264,7 +1269,8 @@ int AMF0Any::Discovery(BufferManager *manager, AMF0Any **ppvalue)
         }
         case RTMP_AMF0_ECMA_ARRAY:
         {
-
+            *ppvalue = AMF0Any::EcmaArray();
+            return ret;
         }
         case RTMP_AMF0_STRICT_ARRAY:
         {

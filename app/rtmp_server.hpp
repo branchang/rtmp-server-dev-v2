@@ -29,6 +29,8 @@ public:
 
 protected:
     virtual int IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string stream_id);
+    virtual int IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double duration);
+    virtual int IdentiyFlashPublishClient(rtmp::PublishPacket *pkt, rtmp::ConnType &type, std::string &stream_name);
 
 private:
     IProtocolReaderWriter *rw_;

@@ -153,6 +153,7 @@ public:
     virtual bool CanPublish(bool is_edge);
     virtual void OnConsumerDestory(Consumer *consumer);
     virtual int OnAudio(CommonMessage *msg);
+    virtual int OnVideo(CommonMessage *msg);
     virtual int OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt);
     virtual int OnDvrRequestSH();
     virtual int OnPublish();

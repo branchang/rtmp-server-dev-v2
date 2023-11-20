@@ -188,6 +188,47 @@ int RTMPServer::IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnT
     return ret;
 }
 
+int RTMPServer::IdentiyFlashPublishClient(rtmp::PublishPacket *pkt, rtmp::ConnType &type, std::string &stream_name)
+{
+    int ret = ERROR_SUCCESS;
+
+    type = rtmp::ConnType::FLASH_PUBLISH;
+    stream_name = pkt->stream_name;
+    rs_info("#### IndentiyFlashPublishClient stream_name:%s", stream_name.c_str());
+
+    return ret;
+}
+
+int RTMPServer::IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double duration)
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::CreateStreamResPacket *res_pkt = new rtmp::CreateStreamResPacket(pkt->transaction_id, stream_id);
+    protocol_->SendAndFreePacket(res_pkt, 0);
+    rs_info("#### IdentiyCreateStreamClient stream_name:%s", stream_name.c_str());
+
+    while (true)
+    {
+        rtmp::CommonMessage *msg = nullptr;
+        protocol_->RecvMessage(&msg);
+        rs_auto_free(rtmp::CommonMessage, msg);
+        rtmp::MessageHeader &h = msg->header;
+        if (!h.IsAMF0Command() && !h.IsAMF3Command())
+        {
+            continue;
+        }
+        rtmp::Packet *packet = nullptr;
+        protocol_->DecodeMessage(msg, &packet);
+        rs_auto_free(rtmp::Packet, packet);
+
+        if (dynamic_cast<rtmp::PublishPacket *>(packet))
+        {
+            return IdentiyFlashPublishClient(dynamic_cast<rtmp::PublishPacket *>(packet), type, stream_name);
+        }
+
+    }
+    return ret;
+}
+
 int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration)
 {
     int ret = ERROR_SUCCESS;
@@ -201,7 +242,7 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
         {
             if(!IsClientGracefullyClose(ret))
             {
-
+                rs_error("recv identify client message failed,ret=%d", ret);
             }
             return ret;
         }
@@ -214,6 +255,7 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
             continue;
         }
 
+        rs_info("2###################################");
         rtmp::Packet *packet = nullptr;
         if ((ret = protocol_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
         {
@@ -222,11 +264,15 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
 
         rs_auto_free(rtmp::Packet, packet);
 
-        rs_info("###################################");
+        rs_info("3###################################");
         if (dynamic_cast<rtmp::FMLEStartPacket *>(packet))
         {
             rs_info("identify client by release Stream, fmle publish");
             return IdentiyFmlePublishClient(dynamic_cast<rtmp::FMLEStartPacket *>(packet), type, stream_name);
+        }else if (dynamic_cast<rtmp::CreateStreamPacket *>(packet))
+        {
+            rs_info("identify client by create Stream, fmle publish");
+            return IdentiyCreateStreamClient(dynamic_cast<rtmp::CreateStreamPacket *>(packet), stream_id,type, stream_name, duration);
         }
     }
 

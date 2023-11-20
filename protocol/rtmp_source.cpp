@@ -631,6 +631,8 @@ int Source::on_video_impl(SharedPtrMessage *msg)
     {
         rs_freep(cache_sh_video_);
         cache_sh_video_ = msg->Copy();
+        flv::AVInfo info;
+        info.avc_parse_sps = _config->GetParseSPS(request_->vhost);
     }
 
     return ret;
@@ -639,8 +641,7 @@ int Source::on_video_impl(SharedPtrMessage *msg)
 int Source::on_audio_impl(SharedPtrMessage *msg)
 {
     int ret = ERROR_SUCCESS;
-    bool is_aac_sequence_header = flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size);
-    bool is_sequence_header = is_aac_sequence_header;
+    bool is_sequence_header =  flv::Codec::IsAudioSeqenceHeader(msg->payload, msg->size);
 
     bool drop_for_reduce = false;
     if (is_sequence_header && cache_sh_audio_)
@@ -652,7 +653,7 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
         }
     }
 
-    if (is_aac_sequence_header)
+    if (is_sequence_header)
     {
         flv::Codec codec;
         flv::CodecSample sample;
@@ -825,6 +826,12 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
         return ret;
     }
 
+    return ret;
+}
+
+int Source::OnVideo(CommonMessage *msg)
+{
+    int ret = ERROR_SUCCESS;
     return ret;
 }
 

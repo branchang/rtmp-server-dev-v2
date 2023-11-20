@@ -42,8 +42,6 @@ static void vhost_resolve(std::string &vhost, std::string &app, std::string &par
     }
 }
 
-
-
 static std::string generate_stream_url(const std::string &vhost, const std::string &app, const std::string &stream)
 {
     std::string retstr = "";
@@ -109,15 +107,10 @@ IMessageHandler::IMessageHandler()
 
 }
 
-
 IMessageHandler::~IMessageHandler()
 {
 
 }
-
-
-
-
 
 
 Request::Request() : object_encoding(3),
@@ -803,7 +796,7 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
             return packet->Decode(manager);
         }else if (command == RTMP_AMF0_COMMAND_PUBLISH)
         {
-            rs_verbose("decode amf0 command message()");
+            rs_verbose("decode amf0 command message(publish)");
             *ppacket = packet = new PublishPacket;
             return packet->Decode(manager);
         }
@@ -906,7 +899,8 @@ int Protocol::DoSimpleSend(MessageHeader *header, char *payload, int size)
 
         int payload_size = rs_min(end - p, out_chunk_size_);
         iovs[1].iov_base = p;
-        iovs[1].iov_len = nbh;
+        // TODO 为什么需要这么修改呢
+        iovs[1].iov_len = payload_size;
         p += payload_size;
         rs_info("### DoSimpleSend %d, %d", payload_size, end-p);
         if (( ret = rw_->WriteEv(iovs, 2, nullptr)) != ERROR_SUCCESS)
