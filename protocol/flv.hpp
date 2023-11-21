@@ -249,7 +249,7 @@ public:
     bool has_aud;
     AVCNaluType first_nalu_type;
     VideoFrameType frame_type;
-    VIdeoPacketType avc_packet_type;
+    VideoPacketType avc_packet_type;
 };
 
 
@@ -291,10 +291,12 @@ public:
 public:
     int avc_demux_sequence_header(BufferManager *manager);
     int avc_demux_sps();
+    int avc_demux_sps_rbsp(char *rbsp, int nb_rbsp);
 
 public:
     int duration;
     int width;
+    int height;
     int frame_rate;
     int video_codec_id;
     int video_data_rate;
@@ -302,7 +304,7 @@ public:
     int audio_data_rate;
     // profile_idc, H.264-AVC-ISO_IEC_14496-10.pdf, page 45
     AVCProfile avc_profile;
-    AVCLevel acv_level;
+    AVCLevel avc_level;
     int8_t nalu_unit_length;
     uint16_t sps_length;
     char *sps;

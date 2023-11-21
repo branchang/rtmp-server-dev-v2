@@ -6,6 +6,47 @@
 namespace flv
 {
 
+static int avc_read_uev(BitBufferManager *manager, int32_t &v)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (manager->Empty())
+    {
+        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
+    }
+
+    int leading_zero_bits = -1;
+    for(int8_t b = 0; !b && !manager->Empty(); leading_zero_bits++)
+    {
+        b = manager->ReadBit();
+    }
+    if (leading_zero_bits > 31)
+    {
+        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
+    }
+
+    v = (1 << leading_zero_bits) - 1;
+    for(int i = 0; i < leading_zero_bits; i++)
+    {
+        int32_t b = manager->ReadBit();
+        v += b << (leading_zero_bits - i -1);
+    }
+
+    return ret;
+}
+
+static int avc_read_bit(BitBufferManager *manager, int8_t &v)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (manager->Empty())
+    {
+        return ERROR_BIT_BUFFER_MANAGER_EMPTY;
+    }
+    v = manager->ReadBit();
+    return ret;
+}
+
 std::string ACodec2Str(AudioCodecType codec_type)
 {
     switch (codec_type)
@@ -136,7 +177,7 @@ bool Codec::IsH264(char *data, int size)
         return false;
     }
 
-    char codec_id = data[0];
+    char codec_id = data[0] & 0x0f;
     // codec_id &= 0x0f;
     return codec_id == (char)VideoCodecType::AVC;
 }
@@ -656,10 +697,389 @@ int Encoder::WriteTags(rtmp::SharedPtrMessage **msgs, int count)
 
 AVInfo::AVInfo()
 {
+    duration = 0;
+    width = 0;
+    height = 0;
+    frame_rate = 0;
+    video_codec_id = 0;
+    video_data_rate = 0;
+    audio_codec_id = 0;
+    audio_data_rate = 0;
+    avc_profile = AVCProfile::UNKNOW;
+    avc_level = AVCLevel::UNKNOW;
+    nalu_unit_length = 0;
+    sps_length = 0;
+    sps = nullptr;
+    pps_length = 0;
+    pps = nullptr;
+    payload_format = AVCPayloadFormat::GUESS;
+    aac_obj_type = AACObjectType::UNKNOW;
+    aac_sample_rate = AAC_SAMPLE_RATE_UNSET;
+    aac_channels = 0;
+    avc_extra_size = 0;
+    avc_extra_data = nullptr;
+    aac_extra_size = 0;
+    aac_extra_data = nullptr;
+    avc_parse_sps = true;
+
 }
 
 AVInfo::~AVInfo()
 {
+}
+
+int AVInfo::avc_demux_sps_rbsp(char *rbsp, int nb_rbsp)
+{
+    //for sps ,7.3.2.1.1 Sequence parameter set data syntax
+    int ret = ERROR_SUCCESS;
+
+    if (!avc_parse_sps)
+    {
+        return ret;
+    }
+
+    BufferManager manager;
+    if (manager.Initialize(rbsp, nb_rbsp) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (!manager.Require(3))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sps_rbsp failed.ret=%d", ret);
+        ret = ERROR_DECODE_H264_FALIED;
+        return ret;
+    }
+
+    uint8_t profile_idc = manager.Read1Bytes();
+    if (!profile_idc)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sps_rbsp failed.ret=%d", ret);
+        return ret;
+    }
+
+    uint8_t flags = manager.Read1Bytes();
+    if (flags & 0x03)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sps_rbsp failed.ret=%d", ret);
+        return ret;
+    }
+
+    uint8_t level_idc = manager.Read1Bytes();
+    if (!level_idc)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sps_rbsp failed.ret=%d", ret);
+        return ret;
+    }
+
+    BitBufferManager bbm;
+    if ((ret = bbm.Initialize(&manager)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int32_t seq_parameter_set_id = -1;
+    if ((ret = avc_read_uev(&bbm, seq_parameter_set_id)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (seq_parameter_set_id < 0)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sps_rbsp failed.ret=%d", ret);
+        return ret;
+    }
+
+    int32_t chroma_format_idc = -1;
+    int8_t separate_colour_plane_flag = 0;
+
+    if (profile_idc == 100 ||
+        profile_idc == 110 ||
+        profile_idc == 122 ||
+        profile_idc == 144 ||
+        profile_idc == 44 ||
+        profile_idc == 83 ||
+        profile_idc == 86 ||
+        profile_idc == 118 ||
+        profile_idc == 128)
+    {
+        if ((ret = avc_read_uev(&bbm ,chroma_format_idc)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        if (chroma_format_idc == 3)
+        {
+            if ((ret = avc_read_bit(&bbm, separate_colour_plane_flag)) != ERROR_SUCCESS)
+            {
+                return ret;
+            }
+        }
+
+        int32_t bit_depth_luma_minus8 = -1;
+        if ((ret = avc_read_uev(&bbm, bit_depth_luma_minus8)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        int8_t qpprime_y_zero_transform_bypass_flag = -1;
+        if ((ret = avc_read_bit(&bbm, qpprime_y_zero_transform_bypass_flag)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        int8_t seq_scaling_matrix_present_flag = -1;
+        if ((ret = avc_read_bit(&bbm, seq_scaling_matrix_present_flag)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        if (seq_scaling_matrix_present_flag)
+        {
+            int nb_scmpfs = ((chroma_format_idc != 3)? 8 : 12);
+            for (int i = 0; i < nb_scmpfs; i++)
+            {
+                int8_t seq_scaling_matrix_present_flag_i = -1;
+                if ((ret = avc_read_bit(&bbm, seq_scaling_matrix_present_flag_i)) != ERROR_SUCCESS)
+                {
+                    return ret;
+                }
+            }
+        }
+    }
+
+    int32_t log2_max_frame_num_minus4 = -1;
+    if ((ret = avc_read_uev(&bbm, log2_max_frame_num_minus4)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int32_t pic_order_cnt_type = -1;
+    if ((ret = avc_read_uev(&bbm, pic_order_cnt_type)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (pic_order_cnt_type == 0)
+    {
+        int32_t log2_max_pic_order_cnt_lsb_minus4 = -1;
+        if ((ret = avc_read_uev(&bbm, log2_max_pic_order_cnt_lsb_minus4)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+    }else if (pic_order_cnt_type == 1)
+    {
+        int8_t delta_pic_order_always_zero_flag = -1;
+        if ((ret = avc_read_bit(&bbm, delta_pic_order_always_zero_flag)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        int32_t offset_for_non_ref_pic = -1;
+        if ((ret = avc_read_uev(&bbm, offset_for_non_ref_pic)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        int32_t offset_for_top_to_bottom_field = -1;
+        if ((ret = avc_read_uev(&bbm, offset_for_top_to_bottom_field)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        int32_t num_ref_frames_in_pic_order_cnt_cycle = -1;
+        if ((ret = avc_read_uev(&bbm, num_ref_frames_in_pic_order_cnt_cycle)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+        if (num_ref_frames_in_pic_order_cnt_cycle < 0)
+        {
+            ret = ERROR_DECODE_H264_FALIED;
+            rs_error("decode sps_rbsp failed.ret=%d", ret);
+            return ret;
+        }
+
+        for (int i = 0;i < num_ref_frames_in_pic_order_cnt_cycle; i++)
+        {
+            int32_t offset_for_ref_frame_i = -1;
+            if ((ret = avc_read_uev(&bbm, offset_for_ref_frame_i)) != ERROR_SUCCESS)
+            {
+                return ret;
+            }
+        }
+    }
+
+    int32_t max_num_ref_frames = -1;
+    if ((ret = avc_read_uev(&bbm, max_num_ref_frames)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int8_t gaps_in_frame_num_value_allowed_flag = -1;
+    if ((ret = avc_read_bit(&bbm, gaps_in_frame_num_value_allowed_flag)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int32_t pic_width_in_mbs_minus1 = -1;
+    if ((ret = avc_read_uev(&bbm, pic_width_in_mbs_minus1)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int32_t pic_height_in_map_units_minus1 = -1;
+    if ((ret = avc_read_uev(&bbm, pic_height_in_map_units_minus1)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int8_t frame_mbs_only_flag = -1;
+    int8_t mb_adaptive_frame_field_flag = -1;
+    int8_t direct_8x8_inference_flag = -1;
+
+    if ((ret = avc_read_bit(&bbm, frame_mbs_only_flag)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if ((ret = avc_read_bit(&bbm, mb_adaptive_frame_field_flag)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if ((ret = avc_read_bit(&bbm, direct_8x8_inference_flag)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    int8_t frame_cropping_flag;
+    int32_t frame_crop_left_offset = 0;
+    int32_t frame_crop_right_offset = 0;
+    int32_t frame_crop_top_offset = 0;
+    int32_t frame_crop_bottom_offset = 0;
+    if ((ret = avc_read_bit(&bbm, frame_cropping_flag)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+    if (frame_cropping_flag)
+    {
+        if ((ret = avc_read_uev(&bbm, frame_crop_left_offset)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        if ((ret = avc_read_uev(&bbm, frame_crop_right_offset)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        if ((ret = avc_read_uev(&bbm, frame_crop_top_offset)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+
+        if ((ret = avc_read_uev(&bbm, frame_crop_bottom_offset)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
+    }
+
+    width = 16  * (pic_width_in_mbs_minus1 + 1);
+    height = 16 * (2 - frame_mbs_only_flag) * (pic_height_in_map_units_minus1 + 1);
+
+    if (separate_colour_plane_flag || chroma_format_idc == 0)
+    {
+        frame_crop_bottom_offset *= (2 - frame_mbs_only_flag);
+        frame_crop_top_offset *= (2 - frame_mbs_only_flag);
+    }
+    else if (!separate_colour_plane_flag && chroma_format_idc > 0)
+    {
+        // width multipliers for formats 1 (4:2:0) and 2 (4:2:2)
+        if (chroma_format_idc == 1 || chroma_format_idc == 2)
+        {
+            frame_crop_left_offset *= 2;
+            frame_crop_right_offset *= 2;
+        }
+        // height multipliers for formats 1 (4:2:0)
+        if (chroma_format_idc == 1)
+        {
+            frame_crop_top_offset *= 2;
+            frame_crop_bottom_offset *= 2;
+        }
+    }
+
+    // Subtract the crop for each dimension.
+    width -= (frame_crop_left_offset + frame_crop_right_offset);
+    width -= (frame_crop_left_offset + frame_crop_bottom_offset);
+
+    rs_trace("sps parse,width=%d, height=%d, profile=%d, level=%d, sps_id", width, height, profile_idc, level_idc, seq_parameter_set_id);
+
+    return ret;
+}
+
+// TODO
+int AVInfo::avc_demux_sps()
+{
+    int ret = ERROR_SUCCESS;
+    if (!sps_length)
+    {
+        return ret;
+    }
+
+    BufferManager manager;
+    if (manager.Initialize(sps, sps_length) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (!manager.Require(1))
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sps failed. ret=%d", ret);
+        return ret;
+    }
+
+    int8_t nutv = manager.Read1Bytes();
+
+    AVCNaluType nalu_unit_type = AVCNaluType(nutv & 0x1f);
+    if (nalu_unit_type != AVCNaluType::SPS)
+    {
+        ret = ERROR_DECODE_H264_FALIED;
+        rs_error("decode sps failed. ret=%d", ret);
+        return ret;
+    }
+
+    int8_t *rbsp = new int8_t[sps_length];
+    rs_auto_freea(int8_t, rbsp);
+
+    int nb_rbsp = 0;
+    while (!manager.Empty())
+    {
+        rbsp[nb_rbsp] = manager.Read1Bytes();
+        if (nb_rbsp > 2 &&
+            rbsp[nb_rbsp - 2] == 0x00 &&
+            rbsp[nb_rbsp - 1] == 0x00 &&
+            rbsp[nb_rbsp] == 0x03)
+        {
+            if (!manager.Empty())
+            {
+                if (!manager.Empty())
+                {
+                    rbsp[nb_rbsp] = manager.Read1Bytes();
+                    nb_rbsp++;
+                    continue;
+                }
+            }
+            nb_rbsp++;
+        }
+    }
+
+    return avc_demux_sps_rbsp((char *)rbsp, nb_rbsp);
 }
 
 int AVInfo::avc_demux_sequence_header(BufferManager *manager)
@@ -684,7 +1104,7 @@ int AVInfo::avc_demux_sequence_header(BufferManager *manager)
     manager->Read1Bytes();
     avc_profile = (AVCProfile)manager->Read1Bytes();
     manager->Read1Bytes();
-    acv_level = (AVCLevel)manager->Read1Bytes();
+    avc_level = (AVCLevel)manager->Read1Bytes();
 
     int8_t length_size_minus_one = manager->Read1Bytes();
     length_size_minus_one &= 0x03;
@@ -767,19 +1187,9 @@ int AVInfo::avc_demux_sequence_header(BufferManager *manager)
         manager->ReadBytes(pps, pps_length);
     }
 
-    return ret;
+    return avc_demux_sps();
 }
 
-int AVInfo::avc_demux_sps()
-{
-    int ret = ERROR_SUCCESS;
-    if (!sps_length)
-    {
-        return ret;
-    }
-
-    return ret;
-}
 
 int AVInfo::AVCDemux(char *data, int size, CodecSample *sample)
 {
@@ -811,7 +1221,7 @@ int AVInfo::AVCDemux(char *data, int size, CodecSample *sample)
 
     sample->frame_type = (VideoFrameType)frame_type;
 
-    if (sample->frame_type != VideoFrameType::VIDEO_INFO_FRAME)
+    if (sample->frame_type == VideoFrameType::VIDEO_INFO_FRAME)
     {
         rs_warn("ignore the info frame");
         return ret;
@@ -840,7 +1250,10 @@ int AVInfo::AVCDemux(char *data, int size, CodecSample *sample)
 
     if (acv_packet_type == (int8_t)VideoPacketType::SEQUENCE_HEADER)
     {
-
+        if ((ret = avc_demux_sequence_header(&manager)))
+        {
+            return ret;
+        }
     }
     else if (acv_packet_type == (int8_t)VideoPacketType::NALU)
     {

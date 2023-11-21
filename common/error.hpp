@@ -261,6 +261,8 @@
 #define ERROR_DECODE_FLV_FAILED 			10000
 #define ERROR_DECODE_H264_FALIED 			10001
 
+#define ERROR_BIT_BUFFER_MANAGER_EMPTY 20000
+
 extern bool IsClientGracefullyClose(int32_t err_code);
 
 extern bool IsSystemControlError(int err_code);
