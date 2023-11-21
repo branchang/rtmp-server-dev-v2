@@ -1082,7 +1082,7 @@ int AVInfo::avc_demux_sps()
     return avc_demux_sps_rbsp((char *)rbsp, nb_rbsp);
 }
 
-int AVInfo::avc_demux_sequence_header(BufferManager *manager)
+int AVInfo::avc_demux_sps_pps(BufferManager *manager)
 {
     int ret = ERROR_SUCCESS;
     avc_extra_size = manager->Size() - manager->Pos();
@@ -1190,6 +1190,211 @@ int AVInfo::avc_demux_sequence_header(BufferManager *manager)
     return avc_demux_sps();
 }
 
+bool AVInfo::avc_has_sequence_header()
+{
+    return avc_extra_size > 0 && avc_extra_data;
+}
+
+bool AVInfo::avc_start_with_annexb(BufferManager *manager, int *pnb_start_code)
+{
+    char *bytes = manager->Data() + manager->Pos();
+    char *p = bytes;
+    while(true)
+    {
+        if (!manager->Require(p - bytes + 3))
+        {
+            return false;
+        }
+        if (p[0] != (char)0x00 && p[1] != (char)0x00)
+        {
+            return false;
+        }
+
+        if (p[2] == (char)0x01)
+        {
+            if (pnb_start_code)
+            {
+                *pnb_start_code = (int)(p - bytes) + 3;
+            }
+            return true;
+        }
+        p++;
+    }
+    return false;
+}
+
+int AVInfo::avc_demux_annexb_format(BufferManager *manager, CodecSample *sample)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!avc_start_with_annexb(manager, nullptr))
+    {
+        return ERROR_AVC_TRY_OTHERS;
+    }
+
+    while (!manager->Empty())
+    {
+        int nb_start_code = 0;
+        if (!avc_start_with_annexb(manager, &nb_start_code))
+        {
+            return ret;
+        }
+
+        if (nb_start_code > 0)
+        {
+            manager->Skip(nb_start_code);
+        }
+
+        char *p = manager->Data() + manager->Pos();
+
+        while (!manager->Empty())
+        {
+            if (avc_start_with_annexb(manager, nullptr))
+            {
+                break;
+            }
+            manager->Skip(1);
+        }
+
+        char *pp = manager->Data() + manager->Pos();
+        if (pp - p <= 0)
+        {
+            continue;
+        }
+        if ((ret = sample->AddSampleUnit(p, pp - p)) != ERROR_SUCCESS)
+        {
+            rs_error("avc add video sample failed.ret=%d", ret);
+            return ret;
+        }
+    }
+    return ret;
+}
+
+int AVInfo::avc_demux_ibmf_format(BufferManager *manager, CodecSample *sample)
+{
+    int ret = ERROR_SUCCESS;
+
+    int picture_length = manager->Size() - manager->Pos();
+
+    for (int i = 0; i < picture_length; i++)
+    {
+        if (!manager->Require(nalu_unit_length + 1))
+        {
+            ret = ERROR_DECODE_H264_FALIED;
+            rs_error("avc decode nalu size failed. ret=%d", ret);
+            return ret;
+        }
+
+        int32_t length = 0;
+
+        if (nalu_unit_length == 3)
+        {
+            length = manager->Read4Bytes();
+        }
+        else if (nalu_unit_length == 1)
+        {
+            length = manager->Read2Bytes();
+        }
+        else
+        {
+            length = manager->Read1Bytes();
+        }
+
+        if (length < 0)
+        {
+            ret = ERROR_DECODE_H264_FALIED;
+            rs_error("maybe stream is annexb format. ret=%d", ret);
+            return ret;
+        }
+
+        if (!manager->Require(length))
+        {
+            ret = ERROR_AVC_TRY_OTHERS;
+            return ret;
+        }
+
+        if ((ret = sample->AddSampleUnit(manager->Data() + manager->Pos(), length)) != ERROR_SUCCESS)
+        {
+            rs_error("avc add video sample failed. ret=%d", ret);
+        }
+
+        manager->Skip(length);
+
+        i += nalu_unit_length + 1 + length;
+    }
+
+    return ret;
+}
+
+int AVInfo::avc_demux_nalu(BufferManager *manager, CodecSample *sample)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (avc_has_sequence_header())
+    {
+        rs_warn("avc ignore type=%d for no sequence header", ret);
+        return ret;
+    }
+
+    if (payload_format == AVCPayloadFormat::GUESS || payload_format == AVCPayloadFormat::ANNEXB)
+    {
+        if ((ret = avc_demux_annexb_format(manager, sample)) != ERROR_SUCCESS)
+        {
+            if (ret != ERROR_AVC_TRY_OTHERS)
+            {
+                rs_error("avc demux annexb failed.ret=%d", ret);
+                return ret;
+            }
+            if ((ret = avc_demux_ibmf_format(manager, sample)) != ERROR_SUCCESS)
+            {
+                if (ret == ERROR_AVC_TRY_OTHERS)
+                {
+                    ret = ERROR_DECODE_H264_FALIED;
+                }
+                rs_error("avc decode nalu failed. ret=%d", ret);
+                return ret;
+            }
+            else
+            {
+                payload_format = AVCPayloadFormat::IBMF;
+            }
+        }
+        else
+        {
+            payload_format = AVCPayloadFormat::IBMF;
+        }
+    }
+    else
+    {
+        if ((ret = avc_demux_ibmf_format(manager, sample)) != ERROR_SUCCESS)
+        {
+            if (ret != ERROR_AVC_TRY_OTHERS)
+            {
+                rs_error("avc demux ibmf failed. ret=%d", ret);
+                return ret;
+            }
+            if ((ret = avc_demux_annexb_format(manager, sample)) != ERROR_SUCCESS)
+            {
+                if (ret == ERROR_AVC_TRY_OTHERS)
+                {
+                    ret = ERROR_DECODE_H264_FALIED;
+                }
+                rs_error("avc decode nalu failed. ret=%d", ret);
+                return ret;
+            }
+            else
+            {
+                payload_format = AVCPayloadFormat::ANNEXB;
+            }
+        }
+        else
+        {
+            payload_format = AVCPayloadFormat::IBMF;
+        }
+    }
+    return ret;
+}
+
 
 int AVInfo::AVCDemux(char *data, int size, CodecSample *sample)
 {
@@ -1250,14 +1455,17 @@ int AVInfo::AVCDemux(char *data, int size, CodecSample *sample)
 
     if (acv_packet_type == (int8_t)VideoPacketType::SEQUENCE_HEADER)
     {
-        if ((ret = avc_demux_sequence_header(&manager)))
+        if ((ret = avc_demux_sps_pps(&manager)))
         {
             return ret;
         }
     }
     else if (acv_packet_type == (int8_t)VideoPacketType::NALU)
     {
-
+        if ((ret = avc_demux_nalu(&manager, sample)) != ERROR_SUCCESS)
+        {
+            return ret;
+        }
     }
     else
     {
