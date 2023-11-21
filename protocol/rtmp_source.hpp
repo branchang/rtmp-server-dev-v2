@@ -2,6 +2,7 @@
 #define RS_RTMP_SOURCE_HPP
 #include <common/core.hpp>
 #include <common/connection.hpp>
+#include <common/queue.hpp>
 #include <protocol/rtmp_stack.hpp>
 
 class Dvr;
@@ -37,29 +38,6 @@ public:
 
 public:
     virtual void WakeUp() = 0;
-};
-
-class FastVector
-{
-public:
-    FastVector();
-    virtual ~FastVector();
-
-public:
-    virtual int Size();
-    virtual int Begin();
-    virtual int End();
-    virtual SharedPtrMessage **Data();
-    virtual SharedPtrMessage *At(int index);
-    virtual void Clear();
-    virtual void Free();
-    virtual void Erase(int begin, int end);
-    virtual void PushBack(SharedPtrMessage *msg);
-
-private:
-    SharedPtrMessage **msgs_;
-    int nb_msgs_;
-    int count_;
 };
 
 class Jitter
@@ -124,7 +102,7 @@ private:
     int64_t av_start_time_;
     int64_t av_end_time_;
     int64_t queue_size_ms_;
-    FastVector msgs_;
+    FastVector<SharedPtrMessage *> msgs_;
 };
 
 class MixQueue
