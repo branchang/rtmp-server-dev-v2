@@ -26,7 +26,7 @@ public:
     virtual void PushBack(T msg);
 
 private:
-    T **msgs_;
+    T *msgs_;
     int nb_msgs_;
     int count_;
 };

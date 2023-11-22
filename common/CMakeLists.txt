@@ -15,6 +15,7 @@ add_library(common
     listener.cpp
     connection.cpp
     kbps.cpp
+    sample.cpp
 )
 
 # add_dependencies(common
