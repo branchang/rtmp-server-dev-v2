@@ -96,6 +96,7 @@ private:
     rtmp::SharedPtrMessage *sh_video_;
     rtmp::SharedPtrMessage *sh_audio_;
     rtmp::SharedPtrMessage *metadata_;
+    int audio_num_before_segment_;
 };
 
 class DvrAppendPlan : public DvrPlan

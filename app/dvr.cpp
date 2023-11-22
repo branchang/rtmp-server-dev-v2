@@ -3,6 +3,10 @@
 #include <protocol/rtmp_amf0.hpp>
 #include <protocol/flv.hpp>
 
+// 48kHz/1024=46.874fps
+// 46.875fps*10s=468.75
+#define NUM_TO_JUDGE_DVR_ONLY_HASH_AUDIO 500
+
 FlvSegment::FlvSegment(DvrPlan *plan)
 {
 	request_ = nullptr;
@@ -347,7 +351,7 @@ int FlvSegment::WriteVideo(rtmp::SharedPtrMessage *shared_video)
 
     if (is_keyframe)
     {
-        is_keyframe = true;
+        has_keyframe_ = true;
         if ((ret = plan_->on_keyframe()) != ERROR_SUCCESS)
         {
             return ret;
@@ -540,6 +544,7 @@ DvrSegmentPlan::DvrSegmentPlan()
 {
     segment_duration_ = -1;
     sh_video_ = sh_audio_ = metadata_ = nullptr;
+    audio_num_before_segment_ = 0;
 }
 
 DvrSegmentPlan::~DvrSegmentPlan()
@@ -629,6 +634,13 @@ int DvrSegmentPlan::update_duration(rtmp::SharedPtrMessage *msg)
             {
                 return ret;
             }
+            audio_num_before_segment_ = 0;
+        }
+
+        if (audio_num_before_segment_ < NUM_TO_JUDGE_DVR_ONLY_HASH_AUDIO)
+        {
+            audio_num_before_segment_++;
+            return ret;
         }
     }
 
@@ -663,6 +675,12 @@ int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *share_audio)
 {
     int ret = ERROR_SUCCESS;
 
+    if (flv::Codec::IsAudioSeqenceHeader(share_audio->payload, share_audio->size))
+    {
+        rs_freep(sh_audio_);
+        sh_audio_ = share_audio->Copy();
+    }
+
     if ((ret = update_duration(share_audio)) != ERROR_SUCCESS)
     {
         return ret;
@@ -679,6 +697,12 @@ int DvrSegmentPlan::OnAudio(rtmp::SharedPtrMessage *share_audio)
 int DvrSegmentPlan::OnVideo(rtmp::SharedPtrMessage *share_video)
 {
     int ret = ERROR_SUCCESS;
+
+    if (flv::Codec::IsVideoSeqenceHeader(share_video->payload, share_video->size))
+    {
+        rs_freep(sh_video_);
+        sh_video_ = share_video->Copy();
+    }
 
     if ((ret = update_duration(share_video)) != ERROR_SUCCESS)
     {
