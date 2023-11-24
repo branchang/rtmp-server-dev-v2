@@ -8,7 +8,7 @@
 
 #include <sstream>
 
-#define MIX_CORRECT_PURE_AV 10
+
 
 namespace rtmp
 {
@@ -299,82 +299,6 @@ ISourceHandler::~ISourceHandler()
 {
 }
 
-MixQueue::MixQueue()
-{
-    nb_videos_ = 0;
-    nb_audios_ = 0;
-}
-
-MixQueue::~MixQueue()
-{
-    Clear();
-}
-
-void MixQueue::Clear()
-{
-    std::multimap<int64_t, SharedPtrMessage *>::iterator it;
-    for(it=msgs_.begin(); it != msgs_.end(); it++)
-    {
-        SharedPtrMessage *msg = it->second;
-        rs_freep(msg);
-    }
-    msgs_.clear();
-    nb_videos_ = 0;
-    nb_audios_ = 0;
-}
-
-void MixQueue::Push(SharedPtrMessage *msg)
-{
-    if (msg->IsVideo())
-    {
-        nb_videos_++;
-    }
-    else
-    {
-        nb_audios_++;
-    }
-
-    msgs_.insert(std::make_pair(msg->timestamp, msg));
-}
-
-SharedPtrMessage* MixQueue::Pop()
-{
-    bool mix_ok = false;
-
-    if (nb_videos_ >= MIX_CORRECT_PURE_AV && nb_audios_ == 0)
-    {
-        mix_ok = true;
-    }
-
-    if (nb_audios_ >= MIX_CORRECT_PURE_AV && nb_videos_ == 0)
-    {
-        mix_ok = true;
-    }
-
-    if (nb_audios_ > 0 && nb_audios_ > 0)
-    {
-        mix_ok = true;
-    }
-
-    if (!mix_ok)
-    {
-        return nullptr;
-    }
-
-    std::multimap<int64_t, SharedPtrMessage *>::iterator it = msgs_.begin();
-    SharedPtrMessage *msg = it->second;
-    msgs_.erase(it);
-    if (msg->IsAudio())
-    {
-        nb_audios_--;
-    }
-    else
-    {
-        nb_videos_--;
-    }
-    return msg;
-}
-
 
 std::map<std::string, Source *> Source::pool_;
 
@@ -390,7 +314,7 @@ Source::Source() : request_(nullptr)
     cache_metadata_ = nullptr;
     cache_sh_video_ = nullptr;
     cache_sh_audio_ = nullptr;
-    mix_queue_ = new MixQueue;
+    mix_queue_ = new MixQueue<SharedPtrMessage>;
     dvr_ = new Dvr;
 }
 
