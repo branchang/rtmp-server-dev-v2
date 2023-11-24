@@ -113,7 +113,8 @@ int32_t RTMPConnection::StreamServiceCycle()
             return Publishing(source);
         case rtmp::ConnType::PLAY:
             break;
-        case rtmp::ConnType::UNKNOW:
+        // case rtmp::ConnType::UNKNOW:
+        default:
             break;
     }
 
@@ -127,7 +128,7 @@ int32_t RTMPConnection::Publishing(rtmp::Source *source)
     bool vhost_is_edge = _config->GetVhostIsEdge(request_->vhost);
     if ((ret = acquire_publish(source, false)) == ERROR_SUCCESS)
     {
-        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source,type_!=rtmp::ConnType::FMLE_PUBLISH, vhost_is_edge);
+        PublishRecvThread recv_thread(rtmp_, request_, st_netfd_fileno(client_stfd_), 0, this, source,type_!=rtmp::ConnType::FLASH_PUBLISH, vhost_is_edge);
 
         rs_info("start to publish stream %s sucess.", request_->stream.c_str());
 

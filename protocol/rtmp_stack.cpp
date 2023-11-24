@@ -805,6 +805,11 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
             *ppacket = packet = new OnMetadataPacket;
             return packet->Decode(manager);
         }
+        else if (command == RTMP_AMF0_COMMAND_PLAY)
+        {
+            *ppacket = packet = new PlayPacket;
+            return packet->Decode(manager);
+        }
         else
         {
             rs_warn("drop the amf0 command message, command_name=%s", command.c_str());
@@ -826,11 +831,19 @@ int Protocol::DoDecodeMessage(MessageHeader &header, BufferManager *manager, Pac
 int Protocol::OnSendPacket(MessageHeader *header, Packet *packet)
 {
     int ret = ERROR_SUCCESS;
+    SetWindowAckSizePacket *pkt = nullptr;
+    SetChunkSizePacket *pkt2 = nullptr;
     switch (header->message_type)
     {
         case RTMP_MSG_WINDOW_ACK_SIZE:
-            SetWindowAckSizePacket *pkt = dynamic_cast<SetWindowAckSizePacket *>(packet);
+            pkt = dynamic_cast<SetWindowAckSizePacket *>(packet);
             out_ack_size_.window = (uint32_t)pkt->ackowledgement_window_size;
+            break;
+        case RTMP_MSG_SET_CHUNK_SIZE:
+            pkt2 = dynamic_cast<SetChunkSizePacket*>(packet);
+            out_chunk_size_ = pkt2->chunk_size;
+            break;
+        default:
             break;
     }
     return ret;

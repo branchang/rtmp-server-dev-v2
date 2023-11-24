@@ -519,7 +519,7 @@ int DvrPlan::on_reap_segment()
 
 DvrPlan *DvrPlan::CreatePlan(const std::string &vhost)
 {
-    std::string plan = _config->GetDvrPath(vhost);
+    std::string plan = _config->GetDvrPlan(vhost);
 
     if (rs_config_dvr_is_plan_segment((plan)))
     {

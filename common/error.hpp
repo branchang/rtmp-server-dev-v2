@@ -77,6 +77,7 @@
 #define ERROR_RTMP_CHUNK_START              2001
 #define ERROR_RTMP_MSG_INVALID_SIZE         2002
 #define ERROR_RTMP_AMF0_DECODE              2003
+#define ERROR_PROTOCOL_AMF0_DECODE              2003
 #define ERROR_PROTOCOL_AMF0_INVALID             2004
 #define ERROR_RTMP_REQ_CONNECT              2005
 #define ERROR_RTMP_REQ_TCURL                2006

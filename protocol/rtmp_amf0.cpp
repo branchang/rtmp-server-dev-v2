@@ -299,6 +299,17 @@ bool AMF0Any::IsEcmaArray()
     return marker == RTMP_AMF0_ECMA_ARRAY;
 }
 
+bool AMF0Any::ToBoolean()
+{
+    AMF0Boolean *p = dynamic_cast<AMF0Boolean *>(this);
+    return p->value;
+}
+
+bool AMF0Any::IsBoolean()
+{
+    return marker == RTMP_AMF0_BOOLEAN;
+}
+
 AMF0Object *AMF0Any::Object()
 {
     return new AMF0Object;

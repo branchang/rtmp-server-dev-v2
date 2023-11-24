@@ -171,11 +171,33 @@ int ConnectAppPacket::Decode(BufferManager *manager)
         // beacause some client don't send transcode_id=1.0, only warn them
         rs_warn("amf0 decode connect transaction_id incorrect, transaction_id:%.2f, required:%.2f", 1.0, transaction_id);
     }
+    {
+        AMF0Any *p = nullptr;
+        if ((ret=AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
+        {
+            rs_freep(args);
+            rs_error("amf0 decode connect args failed, ret=%d",ret);
+            return ret;
+        }
 
+        if (!p->IsObject())
+        {
+            rs_warn("drop connect args,marker=%#x", p->marker);
+            rs_freep(p);
+            ret = ERROR_PROTOCOL_AMF0_DECODE;
+            rs_error("decode connect_app packet: amf0 read object failed.ret=%d", ret);
+            return ret;
+        }
+        else
+        {
+            rs_freep(command_object);
+            command_object = p->ToObject();
+        }
+    }
+
+    AMF0Any *p = nullptr;
     if (!manager->Empty())
     {
-
-        AMF0Any *p = nullptr;
         if ((ret=AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
         {
             rs_freep(args);
@@ -190,9 +212,9 @@ int ConnectAppPacket::Decode(BufferManager *manager)
         }
         else{
             rs_freep(args);
-            // args = p->ToObject();
+            args = p->ToObject();
             // rs_freep(command_object);
-            command_object = p->ToObject();
+            // command_object = p->ToObject();
         }
     }
     rs_info("amf0 decode connect request success");
@@ -327,12 +349,35 @@ int ConnectAppResPacket::Decode(BufferManager* manager)
         }
     }
 
-    if ((ret = info->Read(manager)) != ERROR_SUCCESS)
+    // if ((ret = info->Read(manager)) != ERROR_SUCCESS)
+    // {
+    //     rs_error("amf0 decode connect info failed, ret=%d", ret);
+    //     return ret;
+    // }
     {
-        rs_error("amf0 decode connect info failed, ret=%d", ret);
-        return ret;
+        AMF0Any *p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
+        {
+            rs_freep(p);
+            rs_error("decode connect_app response packet: amf0 read info failed. ret=%d", ret);
+            return ret;
+        }
+
+        if (!p->IsObject())
+        {
+            rs_freep(p);
+            ret = ERROR_PROTOCOL_AMF0_DECODE;
+            rs_error("decode connect_app response packet: amf0 read info failed. type wrong, ret=%d", ret);
+            return ret;
+        }
+        else
+        {
+            rs_freep(info);
+            info = p->ToObject();
+        }
     }
 
+    rs_trace("decode connect_app response packet success");
     return ret;
 }
 
@@ -586,7 +631,7 @@ int FMLEStartPacket::GetSize()
     int size = 0;
     size += AMF0_LEN_STR(command_name);
     size += AMF0_LEN_NUMBER;
-    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_ANY(command_object);
     size += AMF0_LEN_STR(stream_name);
     return size;
 }
@@ -876,7 +921,7 @@ int CreateStreamResPacket::GetSize()
     int size = 0;
     size += AMF0_LEN_STR(command_name);
     size += AMF0_LEN_NUMBER;
-    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_ANY(command_object);
     size += AMF0_LEN_NUMBER;
     return size;
 }
@@ -991,7 +1036,7 @@ int PublishPacket::GetSize()
     int size = 0;
     size += AMF0_LEN_STR(command_name);
     size += AMF0_LEN_NUMBER;
-    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_ANY(command_object);
     size += AMF0_LEN_STR(stream_name);
     size += AMF0_LEN_STR(type);
     return size;
@@ -1036,7 +1081,7 @@ int OnStatusCallPacket::GetSize()
     int size = 0;
     size += AMF0_LEN_STR(command_name);
     size += AMF0_LEN_NUMBER;
-    size += AMF0_LEN_NULL;
+    size += AMF0_LEN_ANY(args);
     size += AMF0_LEN_OBJECT(data);
     return size;
 }
@@ -1154,19 +1199,172 @@ int OnMetadataPacket::Decode(BufferManager *manager)
     {
         rs_freep(metadata);
         metadata = any->ToObject();
-        return ret;
-    }
-
-    rs_auto_free(AMF0Any, any);
-    if (any->IsEcmaArray())
+    } else
     {
-        AMF0EcmaArray *arr = any->ToEcmaArray();
-        for (int i = 0; i < arr->Count(); i++)
+        rs_auto_free(AMF0Any, any);
+        if (any->IsEcmaArray())
         {
-            metadata->Set(arr->KeyAt(i), arr->ValueAt(i)->Copy());
+            AMF0EcmaArray *arr = any->ToEcmaArray();
+            for (int i = 0; i < arr->Count(); i++)
+            {
+                metadata->Set(arr->KeyAt(i), arr->ValueAt(i)->Copy());
+            }
         }
     }
 
+    rs_trace("decode on_metadata packet success");
+
+    return ret;
+}
+
+
+PlayPacket::PlayPacket()
+{
+    command_name = RTMP_AMF0_COMMAND_PLAY;
+    transaction_id = 0;
+    command_obj = AMF0Any::Null();
+    stream_name = "";
+    start = -2;
+    duration = -1;
+    reset = true;
+}
+
+PlayPacket::~PlayPacket()
+{
+    rs_freep(command_obj);
+}
+
+int PlayPacket::GetPreferCID()
+{
+    return RTMP_CID_OVER_CONNECTION;
+}
+
+int PlayPacket::GetMessageType()
+{
+    return RTMP_MSG_AMF0_COMMAND;
+}
+
+int PlayPacket::Decode(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
+
+    if ((ret = AMF0ReadString(manager, command_name)) != ERROR_SUCCESS)
+    {
+        rs_error("decode play packet: amf0 read command failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (command_name.empty() || command_name != RTMP_AMF0_COMMAND_PLAY)
+    {
+        ret = ERROR_PROTOCOL_AMF0_DECODE;
+        rs_error("decode play packet: amf0 read command failed. require=%s, actual=%s, ret=%d",
+                 RTMP_AMF0_COMMAND_PLAY,
+                 (command_name.empty() ? "[EMPTY]" : command_name.c_str()), ret);
+        return ret;
+    }
+
+    if ((ret = AMF0ReadNumber(manager, transaction_id)) != ERROR_SUCCESS)
+    {
+        rs_error("decode play packet: amf0 read transaction_id failed. ret=%d", ret);
+        return ret;
+    }
+    {
+        AMF0Any *p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
+        {
+            rs_freep(p);
+            rs_error("decode play packet: amf0 read object failed. ret=%d", ret);
+            return ret;
+        }
+        else
+        {
+            rs_freep(command_obj);
+            command_obj = p;
+        }
+    }
+
+    if ((ret = AMF0ReadString(manager, stream_name)) != ERROR_SUCCESS)
+    {
+        rs_error("decode play packet: amf0 read stream_name failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (!manager->Empty() && (ret = AMF0ReadNumber(manager, start)) != ERROR_SUCCESS)
+    {
+        rs_error("decode play packet: amf0 read start_pos failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (!manager->Empty() && (ret = AMF0ReadNumber(manager, duration)) != ERROR_SUCCESS)
+    {
+        rs_error("decode play packet: amf0 read duration failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (!manager->Empty())
+    {
+        AMF0Any *p = nullptr;
+        if ((ret = AMF0ReadAny(manager, &p)) != ERROR_SUCCESS)
+        {
+            rs_freep(p);
+            rs_error("decode play packet: amf0 read reset marker failed. ret=%d", ret);
+            return ret;
+        }
+
+        rs_auto_freea(AMF0Any, p);
+
+        if (p)
+        {
+            if (p->IsBoolean())
+            {
+                reset = p->ToBoolean();
+            }
+            else if (p->IsNumber())
+            {
+                reset = (p->ToNumber() != 0);
+            }
+            else
+            {
+                ret = ERROR_PROTOCOL_AMF0_DECODE;
+                rs_error("decode play packet: amf0 read reset marker failed. invalid type=%#x, requires number or boolean, ret=%d",
+                         p->marker,
+                         ret);
+                return ret;
+            }
+        }
+    }
+
+    rs_trace("decode play packet success");
+    return ret;
+}
+
+int PlayPacket::GetSize()
+{
+    int size = 0;
+    size += AMF0_LEN_STR(command_name);
+    size += AMF0_LEN_NUMBER;
+    size += AMF0_LEN_ANY(command_obj);
+    size += AMF0_LEN_STR(stream_name);
+
+    if (start != -2 || duration != -1 || !reset)
+    {
+        size += AMF0_LEN_NUMBER;
+    }
+    if (duration != -1 || !reset)
+    {
+        size += AMF0_LEN_NUMBER;
+    }
+    if (!reset)
+    {
+        size += AMF0_LEN_BOOLEAN;
+    }
+
+    return size;
+}
+
+int PlayPacket::EncodePacket(BufferManager *manager)
+{
+    int ret = ERROR_SUCCESS;
     return ret;
 }
 
