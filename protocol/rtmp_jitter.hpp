@@ -2,10 +2,11 @@
 #define RS_RTMP_JITTER_HPP
 
 #include <common/core.hpp>
-#include <protocol/rtmp_message.hpp>
 
 namespace rtmp
 {
+
+class SharedPtrMessage;
 
 enum class JitterAlgorithm
 {

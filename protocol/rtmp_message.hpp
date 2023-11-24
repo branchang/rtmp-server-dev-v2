@@ -2,9 +2,12 @@
 #define RS_RTMP_MESSAGE_HPP
 
 #include <common/core.hpp>
+#include <common/queue.hpp>
+#include <protocol/rtmp_jitter.hpp>
 
 namespace rtmp
 {
+class Consumer;
 
 extern int chunk_header_c0(int perfer_cid, uint32_t timestamp, int32_t payload_length,
                             int8_t message_type, int32_t stream_id, char *buf);
@@ -130,6 +133,31 @@ public:
 public:
     SharedPtrMessage **msgs;
     int max;
+};
+
+class MessageQueue
+{
+public:
+    MessageQueue();
+    virtual ~MessageQueue();
+
+public:
+    virtual int Size();
+    virtual int Duration();
+    virtual void SetQueueSize(double second);
+    virtual int Enqueue(SharedPtrMessage *msg, bool *is_overflow = nullptr);
+    virtual int DumpPackets(int max_count, SharedPtrMessage **pmsgs, int &count);
+    virtual int DumpPackets(Consumer *consumer, bool atc, rtmp::JitterAlgorithm ag);
+
+protected:
+    virtual void Shrink();
+    virtual void Clear();
+
+private:
+    int64_t av_start_time_;
+    int64_t av_end_time_;
+    int64_t queue_size_ms_;
+    FastVector<SharedPtrMessage *> msgs_;
 };
 
 }

@@ -1,7 +1,7 @@
-#include <rtmp_consumser.hpp>
-#include <rtmp_source.hpp>
-#include <rtmp_message.hpp>
+#include <protocol/rtmp_source.hpp>
+#include <protocol/rtmp_message.hpp>
 #include <common/error.hpp>
+#include <protocol/rtmp_consumer.hpp>
 
 namespace rtmp
 {
