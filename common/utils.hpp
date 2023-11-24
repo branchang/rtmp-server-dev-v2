@@ -2,6 +2,7 @@
 #define RS_UTILS_HPP
 
 #include <common/core.hpp>
+#include <common/buffer.hpp>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -57,6 +58,9 @@ public:
     static std::string BuildIndexSuffixPath(const std::string &template_path, int index);
     static bool IsFileExist(const std::string &path);
     static int CreateDirRecursively(const std::string &dir);
+
+    static int avc_read_uev(BitBufferManager *manager, int32_t &v);
+    static int avc_read_bit(BitBufferManager *manager, int8_t &v);
 
 };
 
