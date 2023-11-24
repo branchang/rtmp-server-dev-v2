@@ -4,6 +4,7 @@
 #include <common/connection.hpp>
 #include <common/queue.hpp>
 #include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp_jitter.hpp>
 
 class Dvr;
 
@@ -12,13 +13,6 @@ namespace rtmp
 
 class Source;
 class MessageQueue;
-
-enum class JitterAlgorithm
-{
-    FULL = 1,
-    ZERO,
-    OFF
-};
 
 class ISourceHandler
 {
@@ -38,19 +32,6 @@ public:
 
 public:
     virtual void WakeUp() = 0;
-};
-
-class Jitter
-{
-public:
-    Jitter();
-    virtual ~Jitter();
-public:
-    virtual int Correct(SharedPtrMessage *msg, JitterAlgorithm ag);
-    virtual int GetTime();
-private:
-    int64_t last_pkt_time_;
-    int64_t last_pkt_correct_time_;
 };
 
 class Consumer : public IWakeable
