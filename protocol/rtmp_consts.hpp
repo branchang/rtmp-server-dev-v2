@@ -91,6 +91,7 @@
 #define RTMP_AMF0_COMMAND_ON_FC_UNPUBLISH "onFCUnpublish"
 #define RTMP_AMF0_COMMAND_ON_METADATA "onMetaData"
 #define RTMP_AMF0_COMMAND_SET_DATAFRAME "@setDataFrame"
+#define RTMP_AMF0_COMMAND_PLAY "play"
 
 
 //amf0 marker
