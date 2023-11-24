@@ -80,6 +80,46 @@ std::string sound_size_to_str(AudioSoundSize sound_size)
     }
 }
 
+std::string video_codec_type_to_str(VideoCodecType codec_type)
+{
+    switch (codec_type)
+    {
+    case VideoCodecType::SORENSON_H263:
+        return "SORENSON_H263";
+    case VideoCodecType::SCREEN_VIDEO:
+        return "SCREEN_VIDEO";
+    case VideoCodecType::ON2_VP6:
+        return "ON2_VP6";
+    case VideoCodecType::ON3_VP6_WITH_ALPHA_CHANNEL:
+        return "ON3_VP6_WITH_ALPHA_CHANNEL";
+    case VideoCodecType::SCREEN_VIDEO_VERSION2:
+        return "SCREEN_VIDEO_VERSION2";
+    case VideoCodecType::AVC:
+        return "AVC";
+    default:
+        return "Unknow";
+    }
+}
+
+std::string frame_type_to_str(VideoFrameType frame_type)
+{
+    switch (frame_type)
+    {
+    case VideoFrameType::KEY_FRAME:
+        return "KEY_FRAME";
+    case VideoFrameType::INTER_FRAME:
+        return "INTER_FRAME";
+    case VideoFrameType::DISPOSABLE_INTER_FRAME:
+        return "DISPOSABLE_INTER_FRAME";
+    case VideoFrameType::GENERATED_KEY_FRAME:
+        return "GENERATED_KEY_FRAME";
+    case VideoFrameType::VIDEO_INFO_FRAME:
+        return "VIDEO_INFO_FRAME";
+    default:
+        return "Unknow";
+    }
+}
+
 } // namespace flv
 
 FlvCodecSample::FlvCodecSample()
@@ -406,6 +446,7 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
     int ret = ERROR_SUCCESS;
     if (!acodec)
     {
+        acodec_type = flv::AudioCodecType::AAC;
         rs_freep(acodec);
         acodec = new AACCodec;
     }
@@ -431,34 +472,34 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
         aac_codec->extradata_size = manager->Size() - manager->Pos();
         if (aac_codec->extradata_size > 0)
         {
-            rs_freepa(aac_codec->extradata);
-            aac_codec->extradata = new char[aac_codec->extradata_size];
-            memcpy(aac_codec->extradata, manager->Data() + manager->Pos(), aac_codec->extradata_size);
-
+            // rs_freepa(aac_codec->extradata);
+            // aac_codec->extradata = new char[aac_codec->extradata_size];
+            // memcpy(aac_codec->extradata, manager->Data() + manager->Pos(), aac_codec->extradata_size);
             // if ((ret = aac_sequence_header_demux(aac_extra_data, aac_extra_size)) != ERROR_SUCCESS)
             // {
             //     return ret;
             // }
         }
-        aac_codec->DecodeSequenceHeader();
+        aac_codec->DecodeSequenceHeader(manager);
     }
     else if (aac_packet_type == (int8_t)flv::AudioPakcetType::RAW_DATA)
     {
-        if (!aac_codec->HasSequenceHeader())
-        {
-            rs_warn("aac ignore type=%d for no sequence header.ret=%d", sample->aac_pkt_type,ret);
-            return ret;
-        }
+        return aac_codec->DecodeRawData(manager, sample);
+        // if (!aac_codec->HasSequenceHeader())
+        // {
+        //     rs_warn("aac ignore type=%d for no sequence header.ret=%d", sample->aac_pkt_type,ret);
+        //     return ret;
+        // }
         // if (!is_aac_codec_ok())
         // {
         //     rs_warn("aac ignore type=%d for no sequence header.ret=%d", aac_packet_type, ret);
         //     return ret;
         // }
-        if ((ret = sample->AddSampleUnit(manager->Data() + manager->Pos(), manager->Size() - manager->Pos())) != ERROR_SUCCESS)
-        {
-            rs_error("add aac sample failed.ret=%d", ret);
-            return ret;
-        }
+        // if ((ret = sample->AddSampleUnit(manager->Data() + manager->Pos(), manager->Size() - manager->Pos())) != ERROR_SUCCESS)
+        // {
+        //     rs_error("add aac sample failed.ret=%d", ret);
+        //     return ret;
+        // }
     }
     {
         //ignore
@@ -466,7 +507,52 @@ int FlvDemuxer::demux_aac(BufferManager *manager, FlvCodecSample *sample)
         rs_error("flv aac_packet_type error. ret=%d", ret);
         return ret;
     }
-    return ret;
+}
+
+int FlvDemuxer::demux_avc(BufferManager *manager, FlvCodecSample *sample)
+{
+    int ret = ERROR_SUCCESS;
+
+    if (!vcodec)
+    {
+        vcodec_type = flv::VideoCodecType::AVC;
+        rs_freep(vcodec);
+        vcodec = new AVCCodec;
+    }
+
+    if (sample->frame_type == flv::VideoFrameType::VIDEO_INFO_FRAME)
+    {
+        rs_warn("ignore video info frame");
+        return ret;
+    }
+
+    if (!manager->Require(1))
+    {
+        rs_error("decode compositon_time failed. ret=%d", ret);
+        return ret;
+    }
+
+    sample->avc_pkt_type = (flv::AVCPacketType)manager->Read1Bytes();
+    if (!manager->Require(3))
+    {
+        ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
+        rs_error("decode compositon_time failed. ret=%d", ret);
+        return ret;
+    }
+
+    sample->composition_time = manager->Read3Bytes();
+
+    switch (sample->avc_pkt_type)
+    {
+        case flv::AVCPacketType::SEQUENCE_HEADER:
+            return vcodec->DecodeSequenceHeader(manager);
+        case flv::AVCPacketType::NALU:
+            return vcodec->DecodecNalu(manager, sample);
+        default:
+            ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
+            rs_error("flv avc_packet_type error. ret=%d", ret);
+            return ret;
+    }
 }
 
 bool FlvDemuxer::IsAVC(char *data, int size)
@@ -522,7 +608,7 @@ bool FlvDemuxer::IsVideoSeqenceHeader(char *data, int size)
     char packet_type = data[1];
 
     return frame_type == (char)flv::VideoFrameType::KEY_FRAME &&
-            packet_type == (char)flv::VideoPacketType::SEQUENCE_HEADER;
+            packet_type == (char)flv::AVCPacketType::SEQUENCE_HEADER;
 }
 
 bool FlvDemuxer::IsAudioSeqenceHeader(char *data, int size)
@@ -597,6 +683,58 @@ bool FlvDemuxer::IsAudioSeqenceHeader(char *data, int size)
 int FlvDemuxer::DemuxVideo(char *data, int size, CodecSample *s)
 {
     int ret = ERROR_SUCCESS;
+    if (!data || size <= 0)
+    {
+        //video has not data
+        return ret;
+    }
+
+    if (!dynamic_cast<FlvCodecSample *>(s))
+    {
+        ret = ERROR_CODEC_SAMPLE_TYPE_ERROR;
+        rs_error("codec sample type is not FlvCodecSample. ret=%d", ret);
+        return ret;
+    }
+
+    BufferManager manager;
+    if ((ret = manager.Initialize(data, size)) != ERROR_SUCCESS)
+    {
+        return ret;
+    }
+
+    if (!manager.Require(1))
+    {
+        ret = ERROR_MUXER_DEMUX_FLV_DEMUX_FAILED;
+        rs_error("flv deocde audio sound_size failed. ret=%d", ret);
+        return ret;
+    }
+
+    int8_t temp = manager.Read1Bytes();
+
+    FlvCodecSample *sample = dynamic_cast<FlvCodecSample *>(s);
+    sample->vcodec_type = (flv::VideoCodecType)(temp & 0x0f);
+    sample->frame_type = (flv::VideoFrameType)((temp >> 4) & 0x0f);
+
+    if (!sample->has_print)
+    {
+        sample->has_print = true;
+        rs_trace("flv video data parsed. codec=%s, frame_type=%s",
+                 flv::video_codec_type_to_str(sample->vcodec_type).c_str(),
+                 flv::frame_type_to_str(sample->frame_type).c_str());
+    }
+
+
+    switch(sample->vcodec_type)
+    {
+        case flv::VideoCodecType::AVC:
+            return demux_avc(&manager, sample);
+        default:
+            ret = ERROR_CODEC_UNSUPPORT;
+            rs_error("codec %s is not support yet.ret=%d", flv::video_codec_type_to_str(sample->vcodec_type).c_str(), ret);
+            return ret;
+    }
+
+
     return ret;
 }
 
@@ -642,6 +780,17 @@ int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
     sample->sound_type = (flv::AudioSoundType)sound_type;
     sample->sound_size = (flv::AudioSoundSize)sound_size;
     sample->sample_rate = (flv::AudioSampleRate)sound_rate;
+
+    if (!sample->has_print)
+     {
+         sample->has_print = true;
+        rs_trace("flv audio data parsed. codec=%s, sound_type=%s, sound_size=%sbits, sample_rate=%sHz",
+                  flv::audio_codec_type_to_str(sample->acodec_type).c_str(),
+                  flv::sound_type_to_str(sample->sound_type).c_str(),
+                  flv::sound_size_to_str(sample->sound_size).c_str(),
+                  flv::sample_rate_to_str(sample->sample_rate).c_str());
+     }
+
 
     switch (sample->acodec_type)
     {

@@ -21,7 +21,7 @@ enum class VideoCodecType
     SORENSON_H263 = 2,
     SCREEN_VIDEO = 3,
     ON2_VP6 = 4,
-    ON3_VP6_WITH_ALPHA_CHANGEL = 5,
+    ON3_VP6_WITH_ALPHA_CHANNEL = 5,
     SCREEN_VIDEO_VERSION2 = 6,
     AVC = 7,
 };
@@ -36,7 +36,7 @@ enum class VideoFrameType
     VIDEO_INFO_FRAME = 5
 };
 
-enum class VideoPacketType
+enum class AVCPacketType
 {
     SEQUENCE_HEADER = 0,
     NALU = 1,
@@ -126,6 +126,8 @@ extern std::string sample_rate_to_str(AudioSampleRate sample_rate);
 extern std::string audio_codec_type_to_str(AudioCodecType code_type);
 extern std::string sound_type_to_str(AudioSoundType sound_type);
 extern std::string sound_size_to_str(AudioSoundSize sound_size);
+extern std::string video_codec_type_to_str(VideoCodecType codec_type);
+extern std::string frame_type_to_str(VideoFrameType frame_type);
 
 // extern std::string ACodec2Str(AudioCodecType codec_type);
 // extern std::string AACProfile2Str(AACObjectType object_type);
@@ -144,6 +146,10 @@ public:
     flv::AudioSoundSize sound_size;
     flv::AudioSampleRate sample_rate;
     flv::AACPacketType aac_pkt_type;
+    flv::VideoCodecType vcodec_type;
+    flv::VideoFrameType frame_type;
+    flv::AVCPacketType avc_pkt_type;
+    int32_t composition_time;
     bool has_print;
 };
 

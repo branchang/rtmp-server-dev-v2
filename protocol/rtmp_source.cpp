@@ -547,14 +547,34 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         // flv::AVInfo info;
         // info.avc_parse_sps = _config->GetParseSPS(request_->vhost);
 
-        // flv::CodecSample sample;
-        // if ((ret = info.AVCDemux(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
-        // {
-        //     rs_error("source code demux avc failed. ret=%d", ret);
-        //     return ret;
-        // }
+        FlvCodecSample sample;
+        FlvDemuxer demuxer;
+        if ((ret = demuxer.DemuxVideo(msg->payload, msg->size, &sample)) != ERROR_SUCCESS)
+        {
+            rs_error("source code demux avc failed. ret=%d", ret);
+            return ret;
+        }
     }
 
+    if ((ret = dvr_->OnVideo(msg)) != ERROR_SUCCESS)
+    {
+        rs_warn("dvr process video message failed, ignore and disable dvr.ret=%d", ret);
+        dvr_->OnUnpublish();
+        ret = ERROR_SUCCESS;
+    }
+
+    if (!drop_for_reduce)
+    {
+        for (int i = 0;i<(int)consumers_.size(); i++)
+        {
+            Consumer *consumer = consumers_.at(i);
+            if (( ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) != ERROR_SUCCESS)
+            {
+                rs_error("dispatch video failed. ret=%d", ret);
+                return ret;
+            }
+        }
+    }
 
     return ret;
 }
@@ -585,9 +605,9 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
             return ret;
         }
 
-        static int sample_sizes[] = {8, 16, 0};
-        static int sound_types[] = {1, 2, 0};
-        static int flv_sample_rates[] = {5512, 11025, 22050, 44100, 0};
+        // static int sample_sizes[] = {8, 16, 0};
+        // static int sound_types[] = {1, 2, 0};
+        // static int flv_sample_rates[] = {5512, 11025, 22050, 44100, 0};
 
         // rs_trace("%dB audio sh, codec(%d, profile=%s, %dHz, %dbits, %dchannels) flv sample rate: %dHz", msg->size,
         //          codec.audio_codec_id,
@@ -726,12 +746,12 @@ int Source::OnMetadata(CommonMessage *msg, rtmp::OnMetadataPacket *pkt)
         return ret;
     }
 
-    bool drop_for_reduce = false;
-    if (cache_metadata_ && _config->GetReduceSequenceHeader(request_->vhost))
-    {
-        drop_for_reduce = true;
-        rs_warn("drop for reduce sh metadata, size=%d", msg->size);
-    }
+    // bool drop_for_reduce = false;
+    // if (cache_metadata_ && _config->GetReduceSequenceHeader(request_->vhost))
+    // {
+    //     drop_for_reduce = true;
+    //     rs_warn("drop for reduce sh metadata, size=%d", msg->size);
+    // }
 
     rs_freep(cache_metadata_);
     cache_metadata_ = new rtmp::SharedPtrMessage;

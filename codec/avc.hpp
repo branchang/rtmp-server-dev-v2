@@ -4,6 +4,9 @@
 #include <common/core.hpp>
 #include <codec/codec.hpp>
 
+namespace avc
+{
+
 enum class AVCProfile
 {
     UNKNOW = 0,
@@ -36,8 +39,10 @@ enum class AVCLevel
     LEVEL_32 = 32,
     LEVEL_4 = 40,
     LEVEL_41 = 41,
+    LEVEL_42 = 42,
     LEVEL_5 = 50,
-    LEVEL_51 = 51
+    LEVEL_51 = 51,
+    LEVEL_52 = 52,
 };
 
 enum class AVCPayloadFormat
@@ -69,12 +74,20 @@ enum class AVCNaluType
     CODECD_SLICE_EXT = 20
 };
 
-class AVCCode : public VCodec
+extern std::string profile_to_str(AVCProfile profile);
+extern std::string level_to_str(AVCLevel level);
+extern int avc_read_bit(BitBufferManager *manager, int8_t &v);
+extern int avc_read_uev(BitBufferManager *manager, int32_t &v);
+
+} // namesapace avc
+
+class AVCCodec : public VCodec
 {
 public:
-    AVCCode();
-    virtual ~AVCCode();
+    AVCCodec();
+    virtual ~AVCCodec();
 public:
+    virtual bool HasSequenceHeader() override;
     int AVCDemux(char *data, int size, CodecSample *sample);
 	virtual int DecodeSequenceHeader(BufferManager *manager);
 	virtual int DecodecNalu(BufferManager *manager, CodecSample *sample);
@@ -85,7 +98,6 @@ public:
     int avc_demux_annexb_format(BufferManager *manager, CodecSample *sample);
     int avc_demux_ibmf_format(BufferManager *manager, CodecSample *sample);
     bool avc_start_with_annexb(BufferManager *manager, int *pnb_start_code);
-    bool avc_has_sequence_header();
 
 public:
     int duration;
@@ -97,14 +109,14 @@ public:
     int audio_codec_id;
     int audio_data_rate;
     // profile_idc, H.264-AVC-ISO_IEC_14496-10.pdf, page 45
-    AVCProfile avc_profile;
-    AVCLevel avc_level;
+    avc::AVCProfile avc_profile;
+    avc::AVCLevel avc_level;
     int8_t nalu_unit_length;
     uint16_t sps_length;
     char *sps;
     uint16_t pps_length;
     char *pps;
-    AVCPayloadFormat payload_format;
+    avc::AVCPayloadFormat payload_format;
     // AACObjectType aac_obj_type;
     //samplingFrequencyIndex
     uint8_t aac_sample_rate;
