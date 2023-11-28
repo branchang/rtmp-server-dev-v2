@@ -69,6 +69,7 @@ int Source::FetchOrCreate(Request *r, ISourceHandler *h, Source **pps)
     source = new Source();
     if ((ret = source->Initialize(r, h)) != ERROR_SUCCESS)
     {
+        rs_error("source init failed.%d" ,ret);
         rs_freep(source);
         return ret;
     }
@@ -104,6 +105,7 @@ int Source::Initialize(Request *r, ISourceHandler *h)
     atc_ = _config->GetATC(r->vhost);
     if ((ret = dvr_->Initialize(this, request_)) != ERROR_SUCCESS)
     {
+        rs_error("dvr init failed.%d", ret);
         return ret;
     }
     return ret;
@@ -238,7 +240,6 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
 int Source::OnAudio(CommonMessage *msg)
 {
     int ret = ERROR_SUCCESS;
-
     if (!mix_correct_ && is_monotonically_increase_)
     {
         if (last_packet_time_ > 0 && msg->header.timestamp < last_packet_time_)

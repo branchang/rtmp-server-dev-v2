@@ -38,6 +38,7 @@ int FlvSegment::Initialize(rtmp::Request *request)
 {
     int ret = ERROR_SUCCESS;
     request_ = request;
+    return ret;
 }
 
 bool FlvSegment::IsOverflow(int64_t max_dutation)
@@ -446,6 +447,7 @@ int DvrPlan::Initialize(rtmp::Request *request)
 
     if ((ret = segment_->Initialize(request)) != ERROR_SUCCESS)
     {
+        rs_error("dvr plan segment init failed.%d", ret);
         return ret;
     }
     return ret;
@@ -778,12 +780,14 @@ int Dvr::Initialize(rtmp::Source *source, rtmp::Request *request)
     plan_ = DvrPlan::CreatePlan(request->vhost);
     if ((ret = plan_->Initialize(request)) != ERROR_SUCCESS)
     {
+        rs_error("plan init failed.%d", ret);
         return ret;
     }
 
     source_ = source;
     if ((ret = source->OnDvrRequestSH()) != ERROR_SUCCESS)
     {
+        rs_error("source on dvr requestSH failed.%d", ret);
         return ret;
     }
 

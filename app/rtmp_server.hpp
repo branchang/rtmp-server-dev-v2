@@ -28,7 +28,7 @@ public:
     virtual int FMLEUnPublish(int stream_id, double unpublish_tid);
 
 protected:
-    virtual int IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string stream_id);
+    virtual int IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_name);
     virtual int IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double duration);
     virtual int IdentiyFlashPublishClient(rtmp::PublishPacket *pkt, rtmp::ConnType &type, std::string &stream_name);
 

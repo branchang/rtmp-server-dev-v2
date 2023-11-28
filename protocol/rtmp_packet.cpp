@@ -588,7 +588,7 @@ int FMLEStartPacket::Decode(BufferManager *manager)
         return ret;
     }
 
-    rs_trace("decode FMLE_start packet success");
+    rs_trace("decode FMLE_start packet success, stream name: %s", stream_name.c_str());
     return ret;
 }
 

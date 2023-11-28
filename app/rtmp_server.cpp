@@ -171,11 +171,11 @@ int RTMPServer::ResponseConnectApp(rtmp::Request *req, const std::string &local_
     return ret;
 }
 
-int RTMPServer::IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string stream_id)
+int RTMPServer::IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_name)
 {
     int ret = ERROR_SUCCESS;
     type = rtmp::ConnType::FMLE_PUBLISH;
-    // stream_name = pkt->stream_name;
+    stream_name = pkt->stream_name;
 
     rtmp::FMLEStartResPacket *res_pkt = new rtmp::FMLEStartResPacket(pkt->transaction_id);
     if ((ret = protocol_->SendAndFreePacket(res_pkt, 0)) != ERROR_SUCCESS)
@@ -195,6 +195,13 @@ int RTMPServer::IdentiyFlashPublishClient(rtmp::PublishPacket *pkt, rtmp::ConnTy
     type = rtmp::ConnType::FLASH_PUBLISH;
     stream_name = pkt->stream_name;
     rs_info("#### IndentiyFlashPublishClient stream_name:%s", stream_name.c_str());
+
+    // rtmp::FMLEStartResPacket *res_pkt = new rtmp::FMLEStartResPacket(pkt->transaction_id);
+    // if ((ret = protocol_->SendAndFreePacket(res_pkt, 0)) != ERROR_SUCCESS)
+    // {
+    //     rs_error("send release stream response message failed,ret=%d", ret);
+    //     return ret;
+    // }
 
     return ret;
 }

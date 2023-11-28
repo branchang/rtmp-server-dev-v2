@@ -95,6 +95,7 @@ extern void DiscoveryTcUrl(const std::string &tc_url,
     vhost = host;
     vhost_resolve(vhost, app, param);
     vhost_resolve(vhost, stream, param);
+
     if (param == RTMP_DEFAULT_VHOST_PARAM)
     {
         param = "";
@@ -655,7 +656,7 @@ int Protocol::RecvMessage(CommonMessage **pmsg)
         {
             if (!IsClientGracefullyClose(ret))
             {
-                rs_error("recv interlaced message failed,ret=%d", ret);
+                rs_error("recv interlaced message close failed,ret=%d", ret);
             }
             rs_freep(msg);
             return ret;

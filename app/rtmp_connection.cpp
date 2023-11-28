@@ -95,9 +95,12 @@ int32_t RTMPConnection::StreamServiceCycle()
         return ret;
     }
 
+    rs_trace("client identified, type=%d, stream_name=%s, duration=%.2f", type, request_->stream.c_str(), request_->duration);
+
     rtmp::Source *source = nullptr;
     if ((ret = rtmp::Source::FetchOrCreate(request_, server_, &source)) != ERROR_SUCCESS)
     {
+        rs_error("FetchOrCreate failed.%d", ret);
         return ret;
     }
     type_ = type;
