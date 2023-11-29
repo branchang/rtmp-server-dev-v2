@@ -526,8 +526,7 @@ int RTMPServer::StartPlay(int stream_id)
     return ret;
 }
 
-RTMPServer::SetAutoResponse(bool v)
+void RTMPServer::SetAutoResponse(bool v)
 {
     protocol_->SetAutoResponse(v);
 }
-
