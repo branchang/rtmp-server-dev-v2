@@ -131,6 +131,7 @@ public:
     virtual int SendAndFreePacket(Packet *packet, int stream_id);
     virtual void SetRecvBuffer(int buffer_size);
     virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
+    virtual void SetAutoResponse(bool v);
 
     template <typename T>
     int ExpectMessage(CommonMessage **pmsg, T **ppacket)
@@ -195,6 +196,7 @@ private:
     FastBuffer *in_buffer_;
     ChunkStream **cs_cache_;
     std::map<int, ChunkStream *> chunk_stream_;
+    bool                          auto_response_when_recv_;
     AckWindowSize in_ack_size_;
     AckWindowSize out_ack_size_;
     std::vector<Packet *> manual_response_queue_;

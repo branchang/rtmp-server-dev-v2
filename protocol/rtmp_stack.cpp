@@ -1053,4 +1053,9 @@ void Protocol::SetMargeRead(bool v, IMergeReadHandler *handler)
     in_buffer_->SetMergeReadHandler(v, handler);
 }
 
+void Protocol::SetAutoResponse(bool v)
+{
+    auto_response_when_recv_ = v;
+}
+
 }
