@@ -330,6 +330,51 @@ public:
     bool reset;
 };
 
+class UserControlPacket : public Packet
+{
+public:
+    UserControlPacket();
+    virtual ~UserControlPacket();
+
+public:
+    // packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    // Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    int16_t event_type;
+    int32_t event_data;
+    int32_t extra_data;
+};
+
+class OnStatusDataPacket : public Packet
+{
+public:
+    OnStatusDataPacket();
+    virtual ~OnStatusDataPacket();
+
+public:
+    // packet
+    virtual int GetPreferCID() override;
+    virtual int GetMessageType() override;
+    virtual int Decode(BufferManager *manager) override;
+
+protected:
+    // Packet
+    virtual int GetSize() override;
+    virtual int EncodePacket(BufferManager *manager) override;
+
+public:
+    std::string command_name;
+    AMF0Object *data;
+};
+
 
 } //namespace rtmp
 
