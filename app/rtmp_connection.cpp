@@ -115,6 +115,11 @@ int32_t RTMPConnection::StreamServiceCycle()
             }
             return Publishing(source);
         case rtmp::ConnType::PLAY:
+            if ((ret = rtmp_->StartPlay(response_->stream_id)) != ERROR_SUCCESS)
+            {
+                rs_error("start to play stream failed. ret=%d", ret);
+                return ret;
+            }
             break;
         // case rtmp::ConnType::UNKNOW:
         default:

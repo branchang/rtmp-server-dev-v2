@@ -206,7 +206,19 @@ int RTMPServer::IdentiyFlashPublishClient(rtmp::PublishPacket *pkt, rtmp::ConnTy
     return ret;
 }
 
-int RTMPServer::IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double duration)
+int RTMPServer::IdentifyPlayClient(rtmp::PlayPacket *pkt, rtmp::ConnType &type, std::string &stream_name, double &duration)
+{
+    int ret = ERROR_SUCCESS;
+    type = rtmp::ConnType::PLAY;
+    stream_name = pkt->stream_name;
+    duration = pkt->duration;
+
+    rs_info("identify client type=play, stream_name=%s, duration=%.2f", stream_name.c_str(), duration);
+
+    return ret;
+}
+
+int RTMPServer::IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration)
 {
     int ret = ERROR_SUCCESS;
     rtmp::CreateStreamResPacket *res_pkt = new rtmp::CreateStreamResPacket(pkt->transaction_id, stream_id);
@@ -216,23 +228,37 @@ int RTMPServer::IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int str
     while (true)
     {
         rtmp::CommonMessage *msg = nullptr;
-        protocol_->RecvMessage(&msg);
+        if ((ret = protocol_->RecvMessage(&msg)) != ERROR_SUCCESS)
+        {
+            if (!IsClientGracefullyClose(ret))
+            {
+                rs_error("recv identify client message failed.ret=%d", ret);
+            }
+            return ret;
+        }
         rs_auto_free(rtmp::CommonMessage, msg);
         rtmp::MessageHeader &h = msg->header;
+
         if (!h.IsAMF0Command() && !h.IsAMF3Command())
         {
             continue;
         }
+
         rtmp::Packet *packet = nullptr;
-        protocol_->DecodeMessage(msg, &packet);
+        if ((ret = protocol_->DecodeMessage(msg, &packet)) != ERROR_SUCCESS)
+        {
+            rs_error("decodec identify client message failed.ret=%d", ret);
+            return ret;
+        }
         rs_auto_free(rtmp::Packet, packet);
 
-        if (dynamic_cast<rtmp::PublishPacket *>(packet))
+        if (dynamic_cast<rtmp::PlayPacket *>(packet))
         {
-            return IdentiyFlashPublishClient(dynamic_cast<rtmp::PublishPacket *>(packet), type, stream_name);
+            // return IdentiyFlashPublishClient(dynamic_cast<rtmp::PublishPacket *>(packet), type, stream_name);
+            return IdentifyPlayClient(dynamic_cast<rtmp::PlayPacket*>(packet), type, stream_name, duration);
         }
-
     }
+
     return ret;
 }
 
@@ -281,10 +307,14 @@ int RTMPServer::IdentifyClient(int stream_id, rtmp::ConnType &type, std::string 
             rs_info("identify client by create Stream, fmle publish");
             return IdentiyCreateStreamClient(dynamic_cast<rtmp::CreateStreamPacket *>(packet), stream_id,type, stream_name, duration);
         }
+        else
+        {
+            rs_info("identify client failed.");
+            rs_assert(0);
+        }
     }
 
     return ret;
-
 }
 
 int RTMPServer::StartFmlePublish(int stream_id)
@@ -449,5 +479,49 @@ int RTMPServer::FMLEUnPublish(int stream_id, double unpublish_tid)
     }
 
     rs_trace("FMLE unpublish success.");
+    return ret;
+}
+
+int RTMPServer::StartPlay(int stream_id)
+{
+    int ret = ERROR_SUCCESS;
+    {
+        rtmp::UserControlPacket *pkt = new rtmp::UserControlPacket;
+        pkt->event_type = (int16_t)rtmp::UserEventType::STREAM_BEGIN;
+        pkt->event_data = stream_id;
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send StreamBegin message failed. ret=%d", ret);
+            return ret;
+        }
+
+        rs_trace("send StreamBegin success");
+    }
+    {
+        rtmp::OnStatusCallPacket *pkt = new rtmp::OnStatusCallPacket;
+        pkt->data->Set("level", rtmp::AMF0Any::String("status"));
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Play.Reset"));
+        pkt->data->Set("description", rtmp::AMF0Any::String("Stream is now reset ing"));
+        pkt->data->Set("details", rtmp::AMF0Any::String("stream"));
+        pkt->data->Set("clientid", rtmp::AMF0Any::String("ASAICiss"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Play.Reset) message failed. ret=%d", ret);
+            return ret;
+        }
+        rs_trace("send onStatus(NetStream.Play.Reset) success");
+    }
+    {
+        rtmp::OnStatusDataPacket *pkt = new rtmp::OnStatusDataPacket;
+        pkt->data->Set("code", rtmp::AMF0Any::String("NetStream.Data.Start"));
+        if ((ret = protocol_->SendAndFreePacket(pkt, stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send onStatus(NetStream.Data.Reset) message failed. ret=%d", ret);
+            return ret;
+        }
+        rs_trace("send onStatus(NetStream.Data.Reset) success");
+    }
+    rs_trace("start play success");
+
     return ret;
 }

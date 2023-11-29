@@ -26,11 +26,13 @@ public:
     virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
     virtual int DecodeMessage(rtmp::CommonMessage *msg, rtmp::Packet **ppacket);
     virtual int FMLEUnPublish(int stream_id, double unpublish_tid);
+    virtual int StartPlay(int stream_id);
 
 protected:
     virtual int IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_name);
-    virtual int IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double duration);
+    virtual int IdentiyCreateStreamClient(rtmp::CreateStreamPacket *pkt, int stream_id, rtmp::ConnType &type, std::string &stream_name, double &duration);
     virtual int IdentiyFlashPublishClient(rtmp::PublishPacket *pkt, rtmp::ConnType &type, std::string &stream_name);
+    virtual int IdentifyPlayClient(rtmp::PlayPacket *pkt, rtmp::ConnType &type, std::string &stream_name, double &duration);
 
 private:
     IProtocolReaderWriter *rw_;
