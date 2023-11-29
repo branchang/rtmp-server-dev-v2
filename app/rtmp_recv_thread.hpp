@@ -10,6 +10,7 @@
 #include <app/server.hpp>
 
 class RTMPConnection;
+class RTMPServer;
 
 class IMessageHandler
 {
@@ -103,4 +104,35 @@ private:
     int cid;
     int ncid;
 };
+
+class QueueRecvThread : public IMessageHandler{
+
+
+public:
+    QueueRecvThread(rtmp::Consumer* consumer, RTMPServer* rtmp, int timeout_ms);
+    ~QueueRecvThread();
+
+public:
+    virtual int Start();
+    virtual void Stop();
+    virtual bool Empty();
+    virtual int Size();
+    virtual rtmp::CommonMessage* Pump();
+    virtual int ErrorCode();
+    virtual bool CanHandle();
+
+    // IMessageHandler
+    virtual void OnThreadStart() override;
+    virtual void OnThreadStop() override;
+    virtual int Handle(rtmp::CommonMessage* msg) override;
+    virtual void OnRecvError(int32_t ret) override;
+
+private:
+    rtmp::Consumer* consumer_;
+    RTMPServer* rtmp_;
+    RTMPRecvThread* thread_;
+    int recv_error_code_;
+    std::vector<rtmp::CommonMessage*> queue_;
+};
+
 #endif

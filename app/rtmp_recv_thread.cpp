@@ -270,3 +270,93 @@ int64_t PublishRecvThread::GetMsgNum()
 {
     return nb_msgs_;
 }
+
+
+
+QueueRecvThread::QueueRecvThread(rtmp::Consumer* consumer,
+                                 RTMPServer* rtmp,
+                                 int timeout_ms)
+{
+    consumer_ = consumer;
+    rtmp_ = rtmp;
+    thread_ = new RTMPRecvThread(this, rtmp, timeout_ms);
+    recv_error_code_ = ERROR_SUCCESS;
+}
+
+QueueRecvThread::~QueueRecvThread()
+{
+    Stop();
+    //clear queue
+    std::vector<rtmp::CommonMessage*>::iterator it;
+    for (it = queue_.begin(); it != queue_.end(); it++)
+    {
+        rtmp::CommonMessage* msg = *it;
+        rs_freep(msg);
+    }
+    rs_freep(thread_);
+}
+
+int QueueRecvThread::Start()
+{
+    return thread_->Start();
+}
+
+void QueueRecvThread::Stop()
+{
+    return thread_->Stop();
+}
+
+bool QueueRecvThread::Empty()
+{
+    return queue_.empty();
+}
+
+int QueueRecvThread::Size()
+{
+    return (int)queue_.size();
+}
+
+rtmp::CommonMessage* QueueRecvThread::Pump()
+{
+    rtmp::CommonMessage* msg = *queue_.begin();
+    queue_.erase(queue_.begin());
+    return msg;
+}
+
+int QueueRecvThread::ErrorCode()
+{
+    return recv_error_code_;
+}
+
+bool QueueRecvThread::CanHandle()
+{
+    return queue_.empty();
+}
+
+int QueueRecvThread::Handle(rtmp::CommonMessage* msg)
+{
+    queue_.push_back(msg);
+    if (consumer_) {
+        consumer_->WakeUp();
+    }
+
+    return ERROR_SUCCESS;
+}
+
+void QueueRecvThread::OnThreadStart()
+{
+    rtmp_->SetAutoResponse(true);
+}
+
+void QueueRecvThread::OnThreadStop()
+{
+    rtmp_->SetAutoResponse(false);
+}
+
+void QueueRecvThread::OnRecvError(int ret)
+{
+    recv_error_code_ = ret;
+    if (consumer_) {
+        consumer_->WakeUp();
+    }
+}
