@@ -5,7 +5,18 @@
 #include <common/config.hpp>
 
 
-RTMPRecvThread::RTMPRecvThread(rtmp::IMessageHandler *handler,
+IMessageHandler::IMessageHandler()
+{
+
+}
+
+IMessageHandler::~IMessageHandler()
+{
+
+}
+
+
+RTMPRecvThread::RTMPRecvThread(IMessageHandler *handler,
                                RTMPServer *rtmp,
                                int32_t timeout) : handler_(handler),
                                                   rtmp_(rtmp),

@@ -47,20 +47,6 @@ extern void DiscoveryTcUrl(const std::string &tc_url,
                             std::string &param);
 
 
-class IMessageHandler
-{
-public:
-    IMessageHandler();
-    virtual ~IMessageHandler();
-
-public:
-    virtual bool CanHandler() = 0;
-    virtual int32_t Handle(CommonMessage *msg) = 0;
-    virtual void OnRecvError(int32_t ret) = 0;
-    virtual void OnThreadStart() = 0;
-    virtual void OnThreadStop() = 0;
-
-};
 
 
 class Client

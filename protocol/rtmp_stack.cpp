@@ -103,15 +103,6 @@ extern void DiscoveryTcUrl(const std::string &tc_url,
 
 }
 
-IMessageHandler::IMessageHandler()
-{
-
-}
-
-IMessageHandler::~IMessageHandler()
-{
-
-}
 
 
 Request::Request() : object_encoding(3),

@@ -4,16 +4,33 @@
 #include <common/core.hpp>
 #include <common/thread.hpp>
 #include <protocol/rtmp_stack.hpp>
+#include <protocol/rtmp_message.hpp>
 // #include <protocol/buffer.hpp>
 #include <app/rtmp_connection.hpp>
 #include <app/server.hpp>
 
 class RTMPConnection;
 
+class IMessageHandler
+{
+public:
+    IMessageHandler();
+    virtual ~IMessageHandler();
+
+public:
+    virtual bool CanHandler() = 0;
+    virtual int32_t Handle(rtmp::CommonMessage *msg) = 0;
+    virtual void OnRecvError(int32_t ret) = 0;
+    virtual void OnThreadStart() = 0;
+    virtual void OnThreadStop() = 0;
+
+};
+
+
 class RTMPRecvThread : virtual public internal::IThreadHandler
 {
 public:
-    RTMPRecvThread(rtmp::IMessageHandler *message_handler, RTMPServer *rtmp, int32_t timeout);
+    RTMPRecvThread(IMessageHandler *message_handler, RTMPServer *rtmp, int32_t timeout);
     virtual ~RTMPRecvThread();
 
 public:
@@ -28,12 +45,12 @@ public:
     virtual void OnThreadStop() override;
 private:
     internal::Thread *thread_;
-    rtmp::IMessageHandler *handler_;
+    IMessageHandler *handler_;
     RTMPServer *rtmp_;
     int32_t timeout_;
 };
 
-class PublishRecvThread : virtual public rtmp::IMessageHandler,
+class PublishRecvThread : virtual public IMessageHandler,
                           virtual public IMergeReadHandler,
                           virtual public IReloadHandler
 {
