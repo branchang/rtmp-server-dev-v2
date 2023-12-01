@@ -34,6 +34,7 @@ public:
     virtual int DumpPackets(MessageArray *msg_arr, int &count);
     virtual void Wait(int nb_msgs, int duration);
     virtual int OnPlayClientPause(bool is_pause);
+    virtual void UpdateSourceId();
     //IWakeable
     virtual void WakeUp() override;
 private:
@@ -42,6 +43,7 @@ private:
     bool pause_;
     Jitter *jitter_;
     MessageQueue *queue_;
+    bool should_update_source_id_;
     st_cond_t mw_wait_;
     bool mw_waiting_;
     int mw_min_msgs_;

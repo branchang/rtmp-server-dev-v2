@@ -20,6 +20,8 @@ RTMPConnection::RTMPConnection(Server *server, st_netfd_t stfd): Connection(serv
     socket_ = new StSocket(stfd);
     rtmp_ = new RTMPServer(socket_);
     tcp_nodelay_ = false;
+    mw_sleep_ = RTMP_MR_SLEEP_MS;
+    wakeable_ = nullptr;
 }
 
 RTMPConnection::~RTMPConnection()
@@ -28,6 +30,13 @@ RTMPConnection::~RTMPConnection()
     rs_freep(request_);
     rs_freep(rtmp_);
     rs_freep(socket_);
+}
+
+void RTMPConnection::Dispose()
+{
+    // if(wakeable_) {
+    //     wakeable_->WakeUp();
+    // }
 }
 
 int32_t RTMPConnection::DoCycle()
@@ -146,6 +155,85 @@ int32_t RTMPConnection::Publishing(rtmp::Source *source)
     }
 
     return ret;
+}
+
+int32_t RTMPConnection::DoPlaying(rtmp::Source* source, rtmp::Consumer* consumer, QueueRecvThread* recv_thread)
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::MessageArray msgs(RTMP_MR_MSGS);
+
+    while (!disposed_)
+    {
+        if (expired_)
+        {
+            ret = ERROR_USER_DISCONNECT;
+            rs_error("connection expired.ret=%d", ret);
+            return ret;
+        }
+        while (!recv_thread->Empty())
+        {
+            rtmp::CommonMessage* msg = recv_thread->Pump();
+            rs_freep(msg);
+        }
+
+        if ((ret = recv_thread->ErrorCode()) != ERROR_SUCCESS)
+        {
+            if(!IsClientGracefullyClose(ret) && !IsSystemControlError(ret))
+            {
+                rs_error("recv thread failed.ret=%d", ret);
+            }
+            return ret;
+        }
+
+        consumer->Wait(RTMP_MR_MIN_MSGS, mw_sleep_);
+
+        int count = 0;
+        if ((ret = consumer->DumpPackets(&msgs, count)) != ERROR_SUCCESS)
+        {
+            rs_error("get message from consumer failed.ret=%d", ret);
+        }
+        if (count <= 0)
+        {
+            rs_info("mw sleep %dms for no msg", mw_sleep_);
+            st_usleep(mw_sleep_ * 1000);
+            continue;
+        }
+        if ((ret = rtmp_->SendAndFreeMessages(msgs.msgs, count, response_->stream_id)) != ERROR_SUCCESS)
+        {
+            rs_error("send message to client failed.ret=%d", ret);
+        }
+        return ret;
+    }
+    return ret;
+}
+
+int32_t RTMPConnection::Playing(rtmp::Source* source)
+{
+    int ret = ERROR_SUCCESS;
+    rtmp::Consumer* consumer = nullptr;
+    if ((ret = source->CreateConsumer(this, consumer)) != ERROR_SUCCESS)
+    {
+        rs_error("create consumer failed.ret=%d", ret);
+        return ret;
+    }
+
+    QueueRecvThread recv_thread(consumer, rtmp_, mw_sleep_);
+    if ((ret =recv_thread.Start()) != ERROR_SUCCESS)
+    {
+        rs_error("start isolate recv thread failed. ret= %d", ret);
+        return ret;
+    }
+
+    wakeable_ = consumer;
+    ret = DoPlaying(source, consumer, &recv_thread);
+    wakeable_ = nullptr;
+    recv_thread.Stop();
+
+    if (!recv_thread.Empty()) {
+        rs_warn("drop received %d message", recv_thread.Size());
+    }
+
+    return 0;
 }
 
 int32_t RTMPConnection::ServiceCycle()

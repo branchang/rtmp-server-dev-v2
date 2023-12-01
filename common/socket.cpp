@@ -1,5 +1,7 @@
 #include <common/socket.hpp>
 #include <common/error.hpp>
+#include <common/utils.hpp>
+#include <common/log.hpp>
 
 StSocket::StSocket(st_netfd_t stfd): stfd_(stfd),
                                      send_timeout_(ST_UTIME_NO_TIMEOUT),
@@ -135,4 +137,45 @@ int32_t StSocket::WriteEv(const struct iovec *iov, size_t iov_size, ssize_t *nwr
     }
     send_bytes_ += nb_write;
     return ERROR_SUCCESS;
+}
+
+int SendLargeIovs(IProtocolReaderWriter* rw,
+                    iovec*                 iovs,
+                    int                    size,
+                    ssize_t*               pnwrite)
+{
+    int ret = ERROR_SUCCESS;
+
+    static int limits = 1024;
+
+    if (size < limits) {
+        if ((ret = rw->WriteEv(iovs, size, pnwrite)) != ERROR_SUCCESS) {
+            if (!IsClientGracefullyClose(ret)) {
+                rs_error("send with writev failed. ret=%d", ret);
+            }
+            return ret;
+        }
+        return ret;
+    }
+
+    ssize_t nwrite  = 0;
+    int     cur_pos = 0;
+    while (cur_pos < size) {
+        int nb_send = rs_min(limits, size - cur_pos);
+
+        if ((ret = rw->WriteEv(iovs + cur_pos, nb_send, &nwrite)) !=
+            ERROR_SUCCESS) {
+            if (!IsClientGracefullyClose(ret)) {
+                rs_error("send with writev failed. ret=%d", ret);
+            }
+            return ret;
+        }
+
+        cur_pos += nb_send;
+        if (pnwrite) {
+            *pnwrite += nwrite;
+        }
+    }
+
+    return ret;
 }

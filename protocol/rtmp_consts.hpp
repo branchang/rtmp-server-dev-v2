@@ -34,6 +34,10 @@
 //rtmp perf
 #define RTMP_PERF_MW_MSGS 128
 #define RTMP_MR_MSGS 128
+#define RTMP_MR_MIN_MSGS 8
+#define RTMP_MR_SLEEP_MS 350
+#define RTMP_IOVS_MAX (RTMP_MR_MSGS * 2)
+#define RTMP_C0C3_HEADERS_MAX (RTMP_MR_MSGS * 32)
 
 
 // rtmp fmt0 header size(max base header)

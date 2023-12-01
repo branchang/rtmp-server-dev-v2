@@ -328,7 +328,7 @@ int QueueRecvThread::ErrorCode()
     return recv_error_code_;
 }
 
-bool QueueRecvThread::CanHandle()
+bool QueueRecvThread::CanHandler()
 {
     return queue_.empty();
 }
@@ -353,7 +353,7 @@ void QueueRecvThread::OnThreadStop()
     rtmp_->SetAutoResponse(false);
 }
 
-void QueueRecvThread::OnRecvError(int ret)
+void QueueRecvThread::OnRecvError(int32_t ret)
 {
     recv_error_code_ = ret;
     if (consumer_) {

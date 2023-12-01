@@ -95,6 +95,12 @@ int Consumer::DumpPackets(MessageArray *msg_arr, int &count)
     int max = count ? rs_min(count, msg_arr->max) : msg_arr->max;
 
     count = 0;
+
+    if (should_update_source_id_)
+    {
+        should_update_source_id_ = false;
+        rs_trace("update source_id=%d", source_->SourceId());
+    }
     if (pause_)
     {
         return ret;
@@ -149,6 +155,11 @@ void Consumer::WakeUp()
         st_cond_signal(mw_wait_);
         mw_waiting_ = false;
     }
+}
+
+void Consumer::UpdateSourceId()
+{
+    should_update_source_id_ = true;
 }
 
 }

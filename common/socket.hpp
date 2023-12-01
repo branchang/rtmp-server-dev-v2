@@ -5,6 +5,11 @@
 #include <common/io.hpp>
 #include <st.h>
 
+extern int SendLargeIovs(IProtocolReaderWriter* rw,
+                           iovec *iovs,
+                           int size,
+                           ssize_t* pnwrite);
+
 class StSocket : public IProtocolReaderWriter
 {
 public:

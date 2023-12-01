@@ -28,6 +28,9 @@ public:
     virtual int FMLEUnPublish(int stream_id, double unpublish_tid);
     virtual int StartPlay(int stream_id);
     virtual void SetAutoResponse(bool v);
+    virtual int SendAndFreeMessages(rtmp::SharedPtrMessage** msgs,
+    int nb_msgs,
+    int stream_id);
 
 protected:
     virtual int IdentiyFmlePublishClient(rtmp::FMLEStartPacket *pkt, rtmp::ConnType &type, std::string &stream_name);
@@ -40,5 +43,7 @@ private:
     rtmp::HandshakeBytes *handshake_bytes_;
     rtmp::Protocol *protocol_;
 };
+
+
 
 #endif

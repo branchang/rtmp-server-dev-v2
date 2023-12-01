@@ -1,5 +1,6 @@
 #include <protocol/rtmp_source.hpp>
 #include <protocol/rtmp_consts.hpp>
+#include <protocol/gop_cache.hpp>
 #include <muxer/flv.hpp>
 #include <common/config.hpp>
 
@@ -39,6 +40,7 @@ Source::Source() : request_(nullptr)
     cache_sh_audio_ = nullptr;
     mix_queue_ = new MixQueue<SharedPtrMessage>;
     dvr_ = new Dvr;
+    gop_cache_ = new GopCache;
 }
 
 Source::~Source()
@@ -49,6 +51,7 @@ Source::~Source()
     rs_freep(cache_sh_video_);
     rs_freep(cache_metadata_);
     rs_freep(request_);
+    rs_freep(gop_cache_);
 }
 
 int Source::FetchOrCreate(Request *r, ISourceHandler *h, Source **pps)
@@ -449,6 +452,33 @@ int Source::OnPublish()
 void Source::OnUnpublish()
 {
     dvr_->OnUnpublish();
+}
+
+int Source::SourceId()
+{
+    return 0;
+}
+
+int Source::CreateConsumer(Connection* conn, Consumer*& consumer, bool ds, bool dm, bool dg)
+{
+    int ret = ERROR_SUCCESS;
+
+    consumer = new Consumer(this, conn);
+    consumers_.push_back(consumer);
+
+    // queue_size 单位second
+    double queue_size = _config->GetQueueSize(request_->vhost);
+    consumer->SetQueueSize(queue_size);
+
+    if (atc_ && !gop_cache_->Empty())
+    {
+        if (cache_metadata_)
+        {
+            cache_metadata_->timestamp = gop_cache_->StartTime();
+        }
+    }
+
+    return ret;
 }
 
 } // namespace rtmp

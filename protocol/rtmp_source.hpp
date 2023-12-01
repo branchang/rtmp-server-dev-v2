@@ -13,6 +13,7 @@ namespace rtmp
 {
 
 class Source;
+class GopCache;
 
 class ISourceHandler
 {
@@ -41,6 +42,12 @@ public:
     virtual int OnDvrRequestSH();
     virtual int OnPublish();
     virtual void OnUnpublish();
+    virtual int SourceId();
+    virtual int CreateConsumer(Connection* conn,
+                                Consumer*& consumer,
+                                bool ds = true,
+                                bool dm = true,
+                                bool dg = true);
 protected:
     static Source *Fetch(Request *r);
 
@@ -65,6 +72,7 @@ private:
     JitterAlgorithm jitter_algorithm_;
     MixQueue<SharedPtrMessage> *mix_queue_;
     Dvr *dvr_;
+    GopCache* gop_cache_;
 };
 
 } //namespace rtmp

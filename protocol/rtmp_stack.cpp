@@ -1,4 +1,6 @@
+#include <common/socket.hpp>
 #include <protocol/rtmp_stack.hpp>
+#include <protocol/gop_cache.hpp>
 #include <protocol/rtmp_consts.hpp>
 
 namespace rtmp
@@ -194,6 +196,9 @@ Protocol::Protocol(IProtocolReaderWriter *rw) : rw_(rw),
                                                 out_chunk_size_(RTMP_CONSTS_RTMP_PROTOCOL_CHUNK_SIZE)
 
 {
+    nb_out_iovs_ = RTMP_IOVS_MAX;
+    out_iovs_ = (iovec*)malloc(nb_out_iovs_ * sizeof(iovec));
+
     in_buffer_ = new FastBuffer;
     cs_cache_ = new ChunkStream *[RTMP_CHUNK_STREAM_CHCAHE];
     for (int cid = 0;cid < RTMP_CHUNK_STREAM_CHCAHE; cid++)
@@ -233,6 +238,7 @@ Protocol::~Protocol()
         rs_freep(cs);
     }
     rs_freep(cs_cache_);
+    rs_freep(out_iovs_);
 }
 
 void Protocol::SetRecvTimeout(int64_t timeout_us)
@@ -980,6 +986,30 @@ int Protocol::SendAndFreePacket(Packet *packet, int stream_id)
     return ret;
 }
 
+int Protocol::SendAndFreeMessage(SharedPtrMessage** msgs, int nb_msgs, int stream_id)
+{
+    for (int i = 0;i < nb_msgs; i++)
+    {
+        if (!msgs[i])
+        {
+            continue;
+        }
+
+        if (msgs[i]->Check(stream_id))
+        {
+            break;
+        }
+    }
+
+    int ret = DoSendMessages(msgs, nb_msgs);
+    for (int i = 0;i < nb_msgs;i++)
+    {
+        rs_freep(msgs[i]);
+    }
+
+    return ret;
+}
+
 int Protocol::OnRecvMessage(CommonMessage *msg)
 {
     int ret = ERROR_SUCCESS;
@@ -1047,6 +1077,78 @@ void Protocol::SetMargeRead(bool v, IMergeReadHandler *handler)
 void Protocol::SetAutoResponse(bool v)
 {
     auto_response_when_recv_ = v;
+}
+
+int Protocol::DoSendMessages(SharedPtrMessage** msgs, int nb_msgs)
+{
+    int ret = ERROR_SUCCESS;
+
+    int iov_index = 0;
+    iovec* iovs = out_iovs_ + iov_index;
+    int c0c3_cache_index = 0;
+    char* c0c3_cache = out_c0c3_caches_ + c0c3_cache_index;
+
+    for (int i = 0; i < nb_msgs; i++)
+    {
+        SharedPtrMessage* msg = msgs[i];
+        if (!msg){
+            continue;
+        }
+
+        if (!msg->payload || msg->size <= 0)
+        {
+            rs_info("ignore empty message");
+            continue;
+        }
+        char* p = msg->payload;
+        char* pend = msg->payload + msg->size;
+
+        while(p<pend)
+        {
+            int nbh = msg->ChunkHeader(c0c3_cache, p == msg->payload);
+
+            iovs[0].iov_base = c0c3_cache;
+            iovs[0].iov_len = nbh;
+
+            int payload_size = rs_min(out_chunk_size_, (int)(pend - p));
+            iovs[i].iov_base = p;
+            iovs[i].iov_len = payload_size;
+
+            p += payload_size;
+            if (iov_index >= nb_out_iovs_ - 2){
+                rs_warn("resize out_iovs %d => %d", nb_out_iovs_, nb_out_iovs_ + RTMP_IOVS_MAX);
+                nb_out_iovs_ += RTMP_IOVS_MAX;
+                int relloc_size = sizeof(iovec) * nb_out_iovs_;
+                out_iovs_ = (iovec*)realloc(out_iovs_, relloc_size);
+            }
+
+            iov_index += 2;
+            iovs = out_iovs_ + iov_index;
+
+            c0c3_cache_index += nbh;
+            c0c3_cache = out_c0c3_caches_ + c0c3_cache_index;
+
+            int c0c3_left = RTMP_C0C3_HEADERS_MAX - c0c3_cache_index;
+            if (c0c3_left < RTMP_FMT0_HEADER_SIZE) {
+                if ((ret = SendLargeIovs(rw_, out_iovs_, iov_index, nullptr)) != ERROR_SUCCESS)
+                {
+                    return ret;
+                }
+
+                iov_index = 0;
+                iovs = out_iovs_ + iov_index;
+                c0c3_cache_index = 0;
+                c0c3_cache = out_c0c3_caches_ + c0c3_cache_index;
+            }
+        }
+    }
+
+    if (iov_index <= 0)
+    {
+        return ret;
+    }
+
+    return SendLargeIovs(rw_, out_iovs_, iov_index, nullptr);
 }
 
 }

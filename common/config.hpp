@@ -52,6 +52,7 @@ public:
     virtual bool GetDvrEnabled(const std::string &vhost);
     virtual bool GetATCAuto(const std::string &vhost);
     virtual bool GetParseSPS(const std::string &vhost);
+    virtual double GetQueueSize(const std::string &vhost);
 };
 
 extern Config *_config;

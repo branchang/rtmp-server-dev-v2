@@ -15,7 +15,8 @@ Config::~Config()
 
 int32_t Config::getChunkSize(const std::string &vhost)
 {
-    return 128;
+    // return 128;
+    return 15000;
 }
 
 void Config::Subscribe(IReloadHandler *handler)
@@ -122,4 +123,9 @@ bool Config::GetATCAuto(const std::string &vhost)
 bool Config::GetParseSPS(const std::string &vhost)
 {
     return true;
+}
+
+double Config::GetQueueSize(const std::string &vhost)
+{
+    return 5;
 }

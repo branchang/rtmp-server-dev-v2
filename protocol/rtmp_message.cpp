@@ -283,7 +283,8 @@ int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
     if (pheader)
     {
         ptr_->header.message_type = pheader->message_type;
-        ptr_->header.payload_length = pheader->payload_length;
+        // ptr_->header.payload_length = pheader->payload_length;
+        ptr_->header.payload_length = size;
         ptr_->header.perfer_cid = pheader->perfer_cid;
         timestamp = pheader->timestamp;
         stream_id = pheader->stream_id;

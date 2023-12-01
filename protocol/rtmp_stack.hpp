@@ -10,6 +10,7 @@
 #include <protocol/rtmp_amf0.hpp>
 #include <protocol/rtmp_packet.hpp>
 #include <protocol/rtmp_message.hpp>
+#include <protocol/rtmp_consts.hpp>
 #include <protocol/rtmp_handshake.hpp>
 
 #include <map>
@@ -115,6 +116,7 @@ public:
     virtual int RecvMessage(CommonMessage **pmsg);
     virtual int DecodeMessage(CommonMessage *msg, Packet **ppacket);
     virtual int SendAndFreePacket(Packet *packet, int stream_id);
+    virtual int SendAndFreeMessage(SharedPtrMessage** msgs, int nb_msgs, int stream_id);
     virtual void SetRecvBuffer(int buffer_size);
     virtual void SetMargeRead(bool v, IMergeReadHandler *handler);
     virtual void SetAutoResponse(bool v);
@@ -174,6 +176,7 @@ protected:
     virtual int DoSimpleSend(MessageHeader *header, char *payload, int size);
     virtual int OnSendPacket(MessageHeader *header, Packet *packet);
     virtual int ManualResponseFlush();
+    virtual int DoSendMessages(SharedPtrMessage** msgs, int nb_msgs);
 
 private:
     IProtocolReaderWriter *rw_;
@@ -187,6 +190,9 @@ private:
     AckWindowSize out_ack_size_;
     std::vector<Packet *> manual_response_queue_;
     std::map<double, std::string> requests_;
+    iovec* out_iovs_;
+    int nb_out_iovs_;
+    char out_c0c3_caches_[RTMP_C0C3_HEADERS_MAX];
 };
 
 } // namespace rtmp

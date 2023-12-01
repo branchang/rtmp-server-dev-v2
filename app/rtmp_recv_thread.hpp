@@ -119,7 +119,7 @@ public:
     virtual int Size();
     virtual rtmp::CommonMessage* Pump();
     virtual int ErrorCode();
-    virtual bool CanHandle();
+    virtual bool CanHandler() override;
 
     // IMessageHandler
     virtual void OnThreadStart() override;
