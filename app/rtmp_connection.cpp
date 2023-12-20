@@ -129,7 +129,7 @@ int32_t RTMPConnection::StreamServiceCycle()
                 rs_error("start to play stream failed. ret=%d", ret);
                 return ret;
             }
-            break;
+            return Playing(source);
         // case rtmp::ConnType::UNKNOW:
         default:
             break;

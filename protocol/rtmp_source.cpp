@@ -41,6 +41,7 @@ Source::Source() : request_(nullptr)
     mix_queue_ = new MixQueue<SharedPtrMessage>;
     dvr_ = new Dvr;
     gop_cache_ = new GopCache;
+    ag_ = JitterAlgorithm::FULL;
 }
 
 Source::~Source()
@@ -161,19 +162,35 @@ int Source::on_video_impl(SharedPtrMessage *msg)
         dvr_->OnUnpublish();
         ret = ERROR_SUCCESS;
     }
-
     if (!drop_for_reduce)
     {
         for (int i = 0;i<(int)consumers_.size(); i++)
         {
             Consumer *consumer = consumers_.at(i);
-            if (( ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) != ERROR_SUCCESS)
+            if (( ret = consumer->Enqueue(msg, atc_, ag_)) != ERROR_SUCCESS)
             {
                 rs_error("dispatch video failed. ret=%d", ret);
                 return ret;
             }
         }
     }
+
+    if (is_sequence_header) {
+        return ret;
+    }
+
+    gop_cache_->Cache(msg);
+
+    if (atc_) {
+        if (cache_sh_audio_) {
+            cache_sh_audio_->timestamp = msg->timestamp;
+        }
+
+        if (cache_sh_video_) {
+            cache_sh_video_->timestamp = msg->timestamp;
+        }
+    }
+
 
     return ret;
 }
@@ -230,13 +247,36 @@ int Source::on_audio_impl(SharedPtrMessage *msg)
         for (int i = 0; i < (int)consumers_.size(); i++)
         {
             Consumer *consumer = consumers_.at(i);
-            if ((ret = consumer->Enqueue(msg, atc_, jitter_algorithm_)) != ERROR_SUCCESS)
+            if ((ret = consumer->Enqueue(msg, atc_, ag_)) != ERROR_SUCCESS)
             {
                 rs_error("dispatch audio failed, ret=%d", ret);
                 return ret;
             }
         }
     }
+
+    if (is_sequence_header || !cache_sh_audio_) {
+        rs_freep(cache_sh_audio_);
+        cache_sh_audio_ = msg->Copy();
+    }
+
+    if (is_sequence_header) {
+        return ret;
+    }
+
+    gop_cache_->Cache(msg);
+
+    if (atc_) {
+        if (cache_sh_audio_) {
+            cache_sh_audio_->timestamp = msg->timestamp;
+        }
+
+        if (cache_sh_video_) {
+            cache_sh_video_->timestamp = msg->timestamp;
+        }
+    }
+
+    return ret;
 
 }
 
@@ -476,8 +516,41 @@ int Source::CreateConsumer(Connection* conn, Consumer*& consumer, bool ds, bool 
         {
             cache_metadata_->timestamp = gop_cache_->StartTime();
         }
+
+        if (cache_sh_audio_) {
+            cache_sh_audio_->timestamp = gop_cache_->StartTime();
+        }
+
+        if (cache_sh_video_) {
+            cache_sh_video_->timestamp = gop_cache_->StartTime();
+        }
     }
 
+    if (dm && cache_metadata_ && ( ret = consumer->Enqueue(cache_metadata_, atc_, ag_))!= ERROR_SUCCESS )
+    {
+        rs_error("dispatch metadata failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (ds && cache_sh_audio_ && ( ret = consumer->Enqueue(cache_sh_audio_, atc_, ag_))!= ERROR_SUCCESS )
+    {
+        rs_error("dispatch audio sequence header failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (ds && cache_sh_video_ && ( ret = consumer->Enqueue(cache_sh_video_, atc_, ag_))!= ERROR_SUCCESS )
+    {
+        rs_error("dispatch video sequence header failed. ret=%d", ret);
+        return ret;
+    }
+
+    if (dg && ( ret = gop_cache_->Dump(consumer, atc_, ag_))!= ERROR_SUCCESS )
+    {
+        rs_error("dispatch cached gop failed. ret=%d", ret);
+        return ret;
+    }
+
+    rs_trace("create consumer. queue_size=%.2f, jitter=%d", queue_size, ag_);
     return ret;
 }
 

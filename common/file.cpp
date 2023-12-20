@@ -103,7 +103,7 @@ int FileWriter::Write(void* buf, size_t count, ssize_t* pnwrite)
 
     if ((nwrite = st_write(stfd_, buf, count, ST_UTIME_NO_TIMEOUT)) < 0) {
         ret = ERROR_SYSTEM_FILE_WRITE;
-        rs_error("write to file %s failed. ret=%d", ret);
+        rs_error("write to file %s failed. ret=%d", stfd_, ret);
         return ret;
     }
 
@@ -121,7 +121,7 @@ int FileWriter::Writev(iovec* iov, int iovcnt, ssize_t *pnwrite)
 
     if ((nwrite = st_writev(stfd_, iov, iovcnt, ST_UTIME_NO_TIMEOUT)) < 0) {
         ret = ERROR_SYSTEM_FILE_WRITE;
-        rs_error("writev to file %s failed. ret=%d", ret);
+        rs_error("writev to file %s failed. ret=%d", stfd_, ret);
         return ret;
     }
 

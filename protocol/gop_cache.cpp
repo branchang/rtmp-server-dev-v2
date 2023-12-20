@@ -11,6 +11,9 @@ namespace  rtmp {
 
 GopCache::GopCache()
 {
+	cached_video_count_ = 0;
+	enable_gop_cache_ = true;
+	audio_after_last_video_count_ = 0;
 
 }
 

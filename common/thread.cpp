@@ -175,6 +175,11 @@ void Thread::Dispose()
     while (!really_terminated_)
     {
         st_usleep(10 * 1000);
+
+        if (really_terminated_){
+            break;
+        }
+        rs_warn("THREAD_MODULE: wait thread to actually terminated");
     }
     disposed_ = true;
 }

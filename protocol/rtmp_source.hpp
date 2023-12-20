@@ -69,7 +69,7 @@ private:
     SharedPtrMessage *cache_sh_video_;
     SharedPtrMessage *cache_sh_audio_;
     std::vector<Consumer *> consumers_;
-    JitterAlgorithm jitter_algorithm_;
+    JitterAlgorithm ag_;
     MixQueue<SharedPtrMessage> *mix_queue_;
     Dvr *dvr_;
     GopCache* gop_cache_;

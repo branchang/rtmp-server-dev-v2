@@ -163,8 +163,7 @@ int SendLargeIovs(IProtocolReaderWriter* rw,
     while (cur_pos < size) {
         int nb_send = rs_min(limits, size - cur_pos);
 
-        if ((ret = rw->WriteEv(iovs + cur_pos, nb_send, &nwrite)) !=
-            ERROR_SUCCESS) {
+        if ((ret = rw->WriteEv(iovs + cur_pos, nb_send, &nwrite)) != ERROR_SUCCESS) {
             if (!IsClientGracefullyClose(ret)) {
                 rs_error("send with writev failed. ret=%d", ret);
             }

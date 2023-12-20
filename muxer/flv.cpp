@@ -165,6 +165,7 @@ int FlvMuxer::Initialize(FileWriter *writer)
         return ret;
     }
     writer_ = writer;
+    return ret;
 }
 
 int FlvMuxer::WriteFlvHeader()
@@ -798,7 +799,8 @@ int FlvDemuxer::DemuxAudio(char *data, int size, CodecSample *s)
             return demux_aac(&manager, sample);
         default:
             ret = ERROR_CODEC_UNSUPPORT;
-            rs_error("codec %s is not support yet. ret =%d", ret);
+            // TODO 
+            // rs_error("codec %s is not support yet. ret =%d", ret);
             // return ret;
     }
 

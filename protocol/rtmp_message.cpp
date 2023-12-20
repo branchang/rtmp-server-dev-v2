@@ -286,10 +286,14 @@ int SharedPtrMessage::Create(MessageHeader *pheader, char *payload, int size)
         // ptr_->header.payload_length = pheader->payload_length;
         ptr_->header.payload_length = size;
         ptr_->header.perfer_cid = pheader->perfer_cid;
-        timestamp = pheader->timestamp;
-        stream_id = pheader->stream_id;
+        this->timestamp = pheader->timestamp;
+        this->stream_id = pheader->stream_id;
     }
-    this->ptr_->payload = payload;
+
+    ptr_->payload = payload;
+    ptr_->size = size;
+
+    this->payload = ptr_->payload;
     this->size = ptr_->size;
 
     return ret;

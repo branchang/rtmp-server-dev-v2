@@ -98,11 +98,13 @@ void FastVector<T>::Clear()
 template <typename T>
 void FastVector<T>::Erase(int begin, int end)
 {
+    /*
     for (int i = begin; i<end; i++)
     {
         T msg_ = msgs_[i];
         rs_freep(msg_);
     }
+    */
 
     for (int i=0; i < count_-end;i++)
     {

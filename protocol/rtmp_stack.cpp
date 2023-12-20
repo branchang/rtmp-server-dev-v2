@@ -1111,8 +1111,8 @@ int Protocol::DoSendMessages(SharedPtrMessage** msgs, int nb_msgs)
             iovs[0].iov_len = nbh;
 
             int payload_size = rs_min(out_chunk_size_, (int)(pend - p));
-            iovs[i].iov_base = p;
-            iovs[i].iov_len = payload_size;
+            iovs[1].iov_base = p;
+            iovs[1].iov_len = payload_size;
 
             p += payload_size;
             if (iov_index >= nb_out_iovs_ - 2){

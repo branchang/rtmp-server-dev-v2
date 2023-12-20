@@ -18,6 +18,7 @@ Consumer::Consumer(Source *s, Connection *c)
 {
     source_ = s;
     conn_ = c;
+    pause_ = false;
     jitter_ = new Jitter;
     queue_ = new MessageQueue;
     mw_wait_ = st_cond_new();
@@ -47,7 +48,6 @@ int Consumer::GetTime()
 int Consumer::Enqueue(SharedPtrMessage *shared_msg, bool atc, JitterAlgorithm ag)
 {
     int ret = ERROR_SUCCESS;
-
     SharedPtrMessage *msg = shared_msg->Copy();
 
     if (!atc)
@@ -64,7 +64,7 @@ int Consumer::Enqueue(SharedPtrMessage *shared_msg, bool atc, JitterAlgorithm ag
         return ret;
     }
 
-    if (mw_wait_)
+    if (mw_waiting_)
     {
         int duration_ms = queue_->Duration();
         bool match_min_msgs = queue_->Size() - mw_min_msgs_;
@@ -152,6 +152,7 @@ void Consumer::WakeUp()
 
     if (mw_waiting_)
     {
+        rs_info("will wakeup done!!");
         st_cond_signal(mw_wait_);
         mw_waiting_ = false;
     }
